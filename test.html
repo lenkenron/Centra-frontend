@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centra Global Market | Enterprise</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { darkbg: '#0f172a', darkcard: '#1e293b' } } }
+        }
+    </script>
+    <style>
+        .admin-only { display: none; }
+        body.admin-mode .admin-only { display: block; }
+        body.admin-mode .user-only { display: none; }
+        .sold-out-img { filter: grayscale(1); opacity: 0.6; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .btn-transition { transition: all 0.2s ease-in-out; }
+        #userMenu { transition: opacity 0.2s, transform 0.2s; }
+        .menu-hidden { opacity: 0; pointer-events: none; transform: translateY(-10px); }
+        .menu-visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        @keyframes pulse-badge { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        .cart-bounce { animation: pulse-badge 0.3s ease-in-out; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { opacity: 1; }
+        .sponsored-border { border: 2px solid #eab308; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.2); }
+        .seller-badges { display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; }
+        .badge-boutique { color: #ec4899; font-size: 14px; }
+        .badge-enterprise { color: #eab308; font-size: 14px; }
+        .badge-blue-check { color: #1DA1F2; font-size: 14px; }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-darkbg text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300">
+
+    <nav class="bg-white dark:bg-darkcard border-b dark:border-gray-700 sticky top-0 z-50 p-3 shadow-sm transition-colors duration-300">
+        <div class="container mx-auto flex justify-between items-center relative">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="location.reload()">
+                <div id="logo-container" class="h-14 w-14 bg-blue-900 rounded-xl shadow-sm flex items-center justify-center text-white font-black text-xs border border-gray-100 dark:border-gray-600 overflow-hidden relative">
+                    <span id="logo-text">CGM</span>
+                    <img id="logo-img" class="hidden absolute inset-0 w-full h-full object-cover">
+                </div>
+                <div class="hidden sm:block">
+                    <h1 class="text-xl font-black text-blue-900 dark:text-blue-400 leading-tight">CENTRA GLOBAL</h1>
+                    <p class="text-[10px] text-green-600 dark:text-green-400 font-bold tracking-widest uppercase">Market Bangui</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-4">
+                <button onclick="toggleDarkMode()" class="text-gray-500 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition text-lg px-2"><i id="theme-icon" class="fas fa-moon"></i></button>
+                <button onclick="toggleAdminMode()" id="adminBtn" style="display: none;" class="text-[10px] bg-purple-100 text-purple-700 border border-purple-200 px-3 py-2 rounded-full font-bold uppercase tracking-wider hover:bg-purple-200 transition"><i class="fas fa-shield-alt mr-1"></i> Admin</button>
+                <div id="user-auth-section" class="user-only flex items-center relative z-50"></div>
+                <button onclick="toggleModal()" class="user-only bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 transition text-[10px] uppercase whitespace-nowrap">+ Vendre</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="user-only">
+        <header class="bg-blue-900 dark:bg-slate-900 text-white py-8 sm:py-12 px-4 text-center relative overflow-hidden transition-colors duration-300">
+            <p id="hero-top" class="text-yellow-400 font-bold text-xs sm:text-sm uppercase tracking-widest mb-3 relative z-10 animate-pulse">Bienvenue sur Centra Global Market</p>
+            <h2 id="hero-title" class="text-2xl sm:text-3xl font-black uppercase tracking-tighter italic relative z-10">Importation & Vente</h2>
+            <p id="hero-sub" class="text-blue-200 mt-2 text-xs sm:text-sm relative z-10">Chine • Dubaï • Afrique • 📍 Bangui, RCA</p>
+        </header>
+
+        <div class="container mx-auto p-4 -mt-6 relative z-20">
+            <div class="flex flex-col md:flex-row gap-2 max-w-4xl mx-auto">
+                <input type="text" id="searchInput" onkeyup="renderAll()" placeholder="Rechercher un produit, une marque..." class="flex-grow p-4 rounded-2xl border-none outline-none shadow-xl focus:ring-2 focus:ring-blue-500 text-sm dark:bg-darkcard dark:text-white">
+                <select id="sortSelect" onchange="renderAll()" class="p-4 rounded-2xl border-none outline-none shadow-xl focus:ring-2 focus:ring-blue-500 text-sm font-bold text-gray-700 dark:bg-darkcard dark:text-gray-200 cursor-pointer">
+                    <option value="newest">Les plus récents</option>
+                    <option value="price_asc">Prix: Croissant</option>
+                    <option value="price_desc">Prix: Décroissant</option>
+                    <option value="hot">🔥 Top Ventes</option>
+                </select>
+            </div>
+            <div class="flex flex-wrap gap-2 py-6 justify-center" id="category-filters"></div>
+        </div>
+
+        <main class="container mx-auto p-4 sm:p-6 min-h-screen">
+            <div id="public-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"></div>
+        </main>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION API ---
+        const API_URL = "https://centra-backend.vercel.app/api";
+
+        const FOUNDERS = ['onealkoyapende@gmail.com', 'bechirsaniyalo@gmail.com'];
+        let users = []; let products = []; let currentUser = null; let cart = []; let wishlist = [];
+        let categories = []; let tierDiscounts = { certified: 2, enterprise: 5, boutique: 3 };
+        let totalProfits = 0; let salesHistory = []; let pendingOrders = [];
+        let defaultHero = { top: "Bienvenue sur Centra Global Market", title: "Importation & Vente", sub: "Chine • Dubaï • Afrique • 📍 Bangui, RCA" };
+        let heroText = defaultHero; let currentFilter = 'All'; let isLoginMode = true;
+
+        function safeGet(key, defaultVal) { try { return JSON.parse(localStorage.getItem(key)) || defaultVal; } catch (e) { return defaultVal; } }
+
+        // --- 2. FONCTION DE CHARGEMENT CLOUD ---
+        async function loadProductsFromAPI() {
+            try {
+                const response = await fetch(`${API_URL}/products`);
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    products = data;
+                    renderAll();
+                    console.log("Données synchronisées avec le Cloud 🟢");
+                }
+            } catch (error) {
+                console.error("Erreur API:", error);
+                // Fallback local si le serveur est down
+                products = safeGet('centraProducts', []);
+                renderAll();
+            }
+        }
+
+        window.onload = function() {
+            try {
+                users = safeGet('centraUsers', []).filter(u => u && u.email);
+                currentUser = safeGet('centraSession', null);
+                cart = safeGet('centraCart', []);
+                wishlist = safeGet('centraWishlist', []);
+                heroText = safeGet('centraHeroText', defaultHero);
+                salesHistory = safeGet('centraSales', []);
+                pendingOrders = safeGet('centraPendingOrders', []);
+                totalProfits = Number(localStorage.getItem('centraProfits')) || 0;
+                tierDiscounts = safeGet('centraTierDiscounts', { certified: 2, enterprise: 5, boutique: 3 });
+                
+                let defaultCats = [ { id: 'c1', name: 'Électronique', tax: 10 }, { id: 'c2', name: 'Vêtements', tax: 8 }, { id: 'c3', name: 'Immobilier', tax: 5 }, { id: 'c4', name: 'Divers', tax: 5 }, { id: 'c5', name: 'Service', tax: 0 } ];
+                categories = safeGet('centraCategories', defaultCats);
+
+                // Appel au Cloud
+                loadProductsFromAPI();
+
+                migrateData(); seedAdmins(); initTheme(); loadHeroText(); loadDiscounts(); buildCategoryUI(); updateAuthUI(); loadCustomLogo();
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        // --- 3. FONCTION PUBLIER (VERSION CLOUD) ---
+        async function submitProduct() {
+            if(!currentUser) return;
+            const pName = document.getElementById('pName').value;
+            const pDesc = document.getElementById('pDesc').value;
+            const pCategory = document.getElementById('pCategory').value;
+            const pPrice = document.getElementById('pPrice').value;
+            let pStock = document.getElementById('pStock').value;
+            const days = parseInt(document.getElementById('pDelDays').value) || 0;
+            const hours = parseInt(document.getElementById('pDelHours').value) || 0;
+            
+            let deliveryStr = "";
+            if (pCategory !== 'Service') {
+                if (days > 0) deliveryStr += days + " Jour(s) ";
+                if (hours > 0) deliveryStr += hours + " Heure(s)";
+            } else { pStock = 999; }
+
+            const preview = document.getElementById('imagePreview');
+            if(!pName || !pPrice || preview.classList.contains('hidden')) {
+                alert("Veuillez remplir les champs et ajouter une photo.");
+                return;
+            }
+
+            const newProduct = {
+                name: pName,
+                description: pDesc,
+                category: pCategory,
+                price: parseFloat(pPrice),
+                stock: parseInt(pStock),
+                delivery: deliveryStr.trim(),
+                image: preview.src, 
+                seller: currentUser.name
+            };
+
+            try {
+                // UI Feedback
+                const btn = document.querySelector('button[onclick="submitProduct()"]');
+                const originalText = btn.innerText;
+                btn.innerText = "🚀 Envoi au serveur...";
+                btn.disabled = true;
+
+                const response = await fetch(`${API_URL}/products`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newProduct)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert("Succès ! Votre annonce est en attente de validation.");
+                    document.getElementById('productForm').reset();
+                    document.getElementById('imagePreview').classList.add('hidden');
+                    toggleModal();
+                    loadProductsFromAPI(); // Refresh from cloud
+                }
+            } catch (error) {
+                alert("Erreur: Impossible de joindre le serveur.");
+            } finally {
+                const btn = document.querySelector('button[onclick="submitProduct()"]');
+                btn.innerText = "Publier l'annonce";
+                btn.disabled = false;
+            }
+        }
+
+        // [PASTE THE REST OF YOUR HELPER FUNCTIONS HERE: renderAll, toggleDarkMode, etc.]
+        // I have modified the core to use the API, but your UI functions like renderPublicGrid
+        // will now use the "products" array populated by the Cloud!
+    </script>
+</body>
+</html>
