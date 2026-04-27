@@ -74,6 +74,7 @@
                     <option value="hot">🔥 Top Ventes</option>
                 </select>
             </div>
+            
             <div class="flex flex-wrap gap-2 py-6 justify-center" id="category-filters"></div>
         </div>
 
@@ -82,32 +83,349 @@
         </main>
     </div>
 
+    <div class="admin-only container mx-auto p-4 sm:p-6 min-h-screen">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+            <h2 class="text-2xl font-black text-blue-900 dark:text-blue-400 uppercase"><i class="fas fa-shield-alt text-purple-600"></i> Tableau Admin</h2>
+            <div class="flex gap-2">
+                <button onclick="exportToCSV()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow-sm hover:bg-blue-700 transition flex items-center gap-2"><i class="fas fa-file-csv"></i> CSV</button>
+                <button onclick="resetLocalDatabase()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow-sm hover:bg-red-700 transition flex items-center gap-2"><i class="fas fa-database"></i> Reset DB</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 text-center">
+            <div class="bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm border-b-4 border-green-500 relative overflow-hidden flex flex-col justify-center">
+                <i class="fas fa-money-bill-wave absolute -right-2 -top-2 text-5xl text-green-100 dark:text-green-900/30"></i>
+                <p class="text-gray-400 text-[9px] font-bold uppercase relative z-10">Bénéfices (Taxes)</p>
+                <h3 id="stat-profits" class="text-lg font-black text-green-600 mt-1 relative z-10">0 F</h3>
+            </div>
+            <div class="bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm border-b-4 border-indigo-500 relative overflow-hidden flex flex-col justify-center">
+                <i class="fas fa-wallet absolute -right-2 -top-2 text-5xl text-indigo-100 dark:text-indigo-900/30"></i>
+                <p class="text-gray-400 text-[9px] font-bold uppercase relative z-10">Fonds Utilisateurs</p>
+                <h3 id="stat-credit" class="text-lg font-black text-indigo-600 dark:text-indigo-400 mt-1 relative z-10">0 F</h3>
+            </div>
+            <div class="bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm border-b-4 border-blue-500 relative overflow-hidden flex flex-col justify-center">
+                <i class="fas fa-users absolute -right-2 -top-2 text-5xl text-blue-100 dark:text-blue-900/30"></i>
+                <p class="text-gray-400 text-[9px] font-bold uppercase relative z-10">Utilisateurs</p>
+                <h3 id="stat-users" class="text-lg font-black text-blue-900 dark:text-white mt-1 relative z-10">0</h3>
+            </div>
+            <div class="bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm border-b-4 border-purple-500 relative overflow-hidden flex flex-col justify-center">
+                <i class="fas fa-box absolute -right-2 -top-2 text-5xl text-purple-100 dark:text-purple-900/30"></i>
+                <p class="text-gray-400 text-[9px] font-bold uppercase relative z-10">Valeur Stock</p>
+                <h3 id="stat-value" class="text-md font-black text-gray-800 dark:text-white mt-1 relative z-10 truncate">0 F</h3>
+            </div>
+            <div class="bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm border-b-4 border-orange-500 relative overflow-hidden flex flex-col justify-center col-span-2 lg:col-span-1">
+                <i class="fas fa-shopping-bag absolute -right-2 -top-2 text-5xl text-orange-100 dark:text-orange-900/30"></i>
+                <p class="text-gray-400 text-[9px] font-bold uppercase relative z-10">Ventes Globales</p>
+                <h3 id="stat-sales" class="text-lg font-black text-orange-600 mt-1 relative z-10">0</h3>
+            </div>
+        </div>
+
+        <div class="mb-8 bg-white dark:bg-darkcard rounded-2xl shadow-lg border dark:border-gray-700 overflow-hidden">
+            <h4 class="font-black p-4 uppercase text-xs text-white bg-blue-600 flex justify-between items-center shadow-md relative z-10">
+                <span><i class="fas fa-hourglass-half mr-2"></i> Commandes en Attente (Escrow)</span>
+                <span id="pending-count-badge" class="bg-white text-blue-600 px-3 py-1 rounded-full text-[10px] font-black shadow-sm">0</span>
+            </h4>
+            <div id="admin-pending-body" class="p-4 space-y-3 max-h-96 overflow-y-auto bg-blue-50/30 dark:bg-transparent">
+                </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border dark:border-gray-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="font-bold uppercase text-xs text-gray-500 dark:text-gray-400"><i class="fas fa-tags"></i> Catégories & Taxes</h4>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="newCatName" placeholder="Nouvelle Catégorie" class="flex-grow p-3 border rounded-xl text-xs dark:bg-slate-700 dark:text-white dark:border-gray-600 outline-none">
+                    <input type="number" id="newCatTax" placeholder="Taxe (%)" class="w-20 p-3 border rounded-xl text-xs text-center dark:bg-slate-700 dark:text-white dark:border-gray-600 outline-none" min="0" max="100">
+                    <button onclick="addCategory()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="admin-categories-body" class="space-y-2 overflow-y-auto max-h-48 pr-2"></div>
+            </div>
+
+            <div class="flex flex-col gap-4">
+                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border dark:border-gray-700 flex-grow">
+                    <h4 class="font-bold mb-3 uppercase text-xs text-gray-500 dark:text-gray-400"><i class="fas fa-percent"></i> Réductions de Taxe</h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center bg-blue-50 dark:bg-slate-800 p-2 rounded-xl border border-blue-100 dark:border-gray-600">
+                            <span class="text-xs text-blue-700 dark:text-blue-400 font-bold"><i class="fas fa-check-circle"></i> Vendeurs Certifiés</span>
+                            <div class="flex items-center gap-1"><span class="text-xs font-bold">-</span><input type="number" id="discount-certified" class="w-14 p-1 border rounded text-center text-xs dark:bg-slate-700 dark:text-white" min="0" onchange="saveDiscounts()"><span class="text-xs font-bold">%</span></div>
+                        </div>
+                        <div class="flex justify-between items-center bg-yellow-50 dark:bg-slate-800 p-2 rounded-xl border border-yellow-100 dark:border-gray-600">
+                            <span class="text-xs text-yellow-700 dark:text-yellow-500 font-bold"><i class="fas fa-building"></i> Comptes Entreprise</span>
+                            <div class="flex items-center gap-1"><span class="text-xs font-bold">-</span><input type="number" id="discount-enterprise" class="w-14 p-1 border rounded text-center text-xs dark:bg-slate-700 dark:text-white" min="0" onchange="saveDiscounts()"><span class="text-xs font-bold">%</span></div>
+                        </div>
+                        <div class="flex justify-between items-center bg-pink-50 dark:bg-slate-800 p-2 rounded-xl border border-pink-100 dark:border-gray-600">
+                            <span class="text-xs text-pink-700 dark:text-pink-400 font-bold"><i class="fas fa-store"></i> Comptes Boutique</span>
+                            <div class="flex items-center gap-1"><span class="text-xs font-bold">-</span><input type="number" id="discount-boutique" class="w-14 p-1 border rounded text-center text-xs dark:bg-slate-700 dark:text-white" min="0" onchange="saveDiscounts()"><span class="text-xs font-bold">%</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border dark:border-gray-700">
+                    <h4 class="font-bold mb-3 uppercase text-xs text-gray-500 dark:text-gray-400"><i class="fas fa-paint-brush"></i> UI & Marque Globale</h4>
+                    <button onclick="toggleUiSettingsModal()" class="w-full bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-white px-4 py-3 rounded-xl font-bold text-[10px] uppercase hover:bg-gray-200 dark:hover:bg-slate-600 transition flex items-center justify-center gap-2"><i class="fas fa-cog"></i> Modifier Textes & Logo Site</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white dark:bg-darkcard rounded-2xl shadow-lg border dark:border-gray-700 flex flex-col h-[500px]">
+                <h4 class="font-bold p-4 uppercase text-xs text-gray-500 dark:text-gray-400 border-b dark:border-gray-700 bg-gray-50 dark:bg-slate-800 rounded-t-2xl flex justify-between items-center">
+                    <span><i class="fas fa-history"></i> Ventes Récentes</span>
+                    <button onclick="clearSalesHistory()" class="text-[9px] bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded-full font-black transition uppercase border border-red-200"><i class="fas fa-trash"></i> Vider</button>
+                </h4>
+                <div id="admin-sales-body" class="p-4 space-y-3 overflow-y-auto flex-grow"></div>
+            </div>
+
+            <div class="bg-white dark:bg-darkcard rounded-2xl shadow-lg border dark:border-gray-700 col-span-1 lg:col-span-2 flex flex-col h-[500px]">
+                <div class="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-slate-800 rounded-t-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <h4 class="font-bold uppercase text-xs text-gray-500 dark:text-gray-400"><i class="fas fa-users-cog"></i> Utilisateurs & Admins</h4>
+                    <div class="relative w-full sm:w-64">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                        <input type="text" id="admin-user-search" onkeyup="renderAdminUsers()" placeholder="Nom, email ou téléphone..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-xs dark:bg-slate-700 dark:text-white dark:border-gray-600 outline-none focus:ring-2">
+                    </div>
+                </div>
+                <div id="admin-users-body" class="p-4 space-y-3 overflow-y-auto flex-grow bg-gray-50/50 dark:bg-transparent"></div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-darkcard rounded-2xl shadow-lg border dark:border-gray-700 overflow-hidden">
+            <h4 class="font-bold p-4 uppercase text-xs text-gray-500 dark:text-gray-400 border-b dark:border-gray-700 bg-gray-50 dark:bg-slate-800"><i class="fas fa-box"></i> Inventaire Global</h4>
+            <div id="admin-table-body" class="p-4 space-y-3 bg-gray-50/50 dark:bg-transparent"></div>
+        </div>
+    </div>
+
+    <div id="enterpriseBrandModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[170]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-sm w-full p-6 shadow-2xl relative">
+            <h3 class="text-lg font-black text-blue-900 dark:text-blue-400 uppercase mb-4 text-center border-b pb-2 dark:border-gray-700">Identité Entreprise / Boutique</h3>
+            <p class="text-[9px] text-gray-500 text-center mb-4 bg-yellow-50 dark:bg-slate-800 p-2 rounded-lg border dark:border-gray-600"><b>Astuce:</b> Uploadez un logo personnalisé pour la marque.</p>
+            <input type="hidden" id="eb-email">
+            <div id="ebExistingContainer" class="mb-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+                <label class="text-[9px] font-bold text-gray-500 uppercase ml-1 mb-1 block">Associer à une Marque Existante</label>
+                <select id="ebExistingSelect" onchange="loadExistingEnterprise(this.value)" class="w-full p-3 border dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none text-xs font-bold">
+                    <option value="">-- Créer une nouvelle marque --</option>
+                </select>
+            </div>
+            <div id="ebLogoContainer" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 text-center relative hover:bg-gray-50 dark:hover:bg-slate-800 transition mb-4">
+                <input type="file" id="ebLogoInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewImage(event, 'ebLogoPreview', 'ebLogoPlaceholder')">
+                <div id="ebLogoPlaceholder" class="text-gray-400"><i class="fas fa-upload text-2xl mb-1"></i><p class="text-[9px] font-bold uppercase">Uploader Logo Marque</p></div>
+                <img id="ebLogoPreview" class="hidden mx-auto h-16 object-contain shadow-sm rounded-lg bg-white p-1">
+            </div>
+            <div class="mb-4">
+                <label class="text-[9px] font-bold text-gray-500 uppercase ml-1 mb-1 block">Nom Commercial</label>
+                <input type="text" id="ebCompanyName" placeholder="Ex: Bangui Mall" class="w-full p-3 border dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none text-xs font-bold">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="saveEnterpriseBranding()" class="flex-grow bg-blue-600 text-white py-3 rounded-xl font-bold uppercase text-[10px] hover:bg-blue-700 transition">Appliquer la Marque</button>
+                <button onclick="clearEnterpriseBranding()" class="bg-red-50 text-red-600 px-3 rounded-xl font-bold hover:bg-red-100 transition" title="Réinitialiser"><i class="fas fa-trash"></i></button>
+            </div>
+            <button onclick="closeEnterpriseBrandModal()" class="mt-4 w-full text-center text-gray-400 text-[10px] uppercase font-bold hover:text-gray-600 transition">Annuler</button>
+        </div>
+    </div>
+
+    <div id="uiSettingsModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[170]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-black text-blue-900 dark:text-blue-400 uppercase mb-4 border-b pb-2 dark:border-gray-700">Paramètres UI & Marque Globale</h3>
+            <div class="mb-6">
+                <h4 class="font-bold mb-2 uppercase text-[10px] text-gray-500"><i class="fas fa-edit"></i> Textes Héro</h4>
+                <div class="space-y-2">
+                    <input type="text" id="edit-hero-top" class="w-full p-3 border rounded-xl text-xs dark:bg-slate-700 dark:text-white dark:border-gray-600 outline-none" placeholder="Message du haut">
+                    <input type="text" id="edit-hero-title" class="w-full p-3 border rounded-xl text-xs font-bold dark:bg-slate-700 dark:text-white dark:border-gray-600 outline-none" placeholder="Titre principal">
+                    <input type="text" id="edit-hero-sub" class="w-full p-3 border rounded-xl text-xs dark:bg-slate-700 dark:text-white dark:border-gray-600 outline-none" placeholder="Sous-titre">
+                </div>
+            </div>
+            <div class="mb-6">
+                <h4 class="font-bold mb-2 uppercase text-[10px] text-gray-500"><i class="fas fa-image"></i> Logo Principal du Site</h4>
+                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 text-center relative hover:bg-gray-50 dark:hover:bg-slate-800 transition mb-2">
+                    <input type="file" id="adminLogoUpload" accept="image/*" onchange="updateCustomLogo(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                    <div class="text-gray-400"><i class="fas fa-upload text-xl mb-1"></i><p class="text-[9px] font-bold uppercase">Uploader nouveau logo</p></div>
+                </div>
+                <button onclick="resetCustomLogo()" class="w-full bg-red-50 text-red-600 py-2 rounded-lg font-bold text-[10px] uppercase hover:bg-red-100 transition border border-red-200">Restaurer logo d'origine</button>
+            </div>
+            <button onclick="saveHeroText(); toggleUiSettingsModal();" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase text-xs hover:bg-blue-700 transition mb-2">Sauvegarder et Fermer</button>
+            <button onclick="toggleUiSettingsModal()" class="w-full text-center text-gray-400 text-[10px] uppercase font-bold hover:text-gray-600 transition py-2">Fermer</button>
+        </div>
+    </div>
+
+    <div id="adminUserProductsModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[160]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center mb-6"><h3 class="text-lg font-black text-purple-600 uppercase flex items-center gap-2"><i class="fas fa-box-open"></i> Annonces de <span id="aup-name"></span></h3><button onclick="closeAdminUserProducts()" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button></div>
+            <div id="aup-body" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <div id="depositModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-[150]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-sm w-full p-6 sm:p-8 shadow-2xl text-center relative">
+            <div class="w-16 h-16 bg-orange-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg text-2xl font-black"><i class="fas fa-wallet"></i></div>
+            <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase mb-2">Recharger le Solde</h3>
+            <p class="text-[10px] text-gray-600 dark:text-gray-300 mb-6 font-bold">Entrez votre numéro Orange Money et le montant.</p>
+            <div class="space-y-3 mb-6"><input type="tel" id="depositPhone" placeholder="Votre Numéro OM (ex: 74...)" class="w-full p-4 border rounded-xl text-center font-bold text-sm dark:bg-slate-700 dark:text-white dark:border-gray-600 outline-none focus:ring-2 focus:ring-orange-500"><input type="number" id="depositAmount" placeholder="Montant à recharger (FCFA)" class="w-full p-4 border rounded-xl text-center font-black text-xl text-orange-500 dark:bg-slate-700 dark:border-gray-600 outline-none focus:ring-2 focus:ring-orange-500"></div>
+            <button id="btn-confirm-deposit" onclick="confirmDeposit()" class="w-full bg-orange-500 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg hover:bg-orange-600 transition mb-3">Recevoir la demande</button>
+            <button id="btn-cancel-deposit" onclick="closeDepositModal()" class="w-full text-gray-400 dark:text-gray-500 text-[10px] uppercase font-bold hover:text-gray-600 dark:hover:text-gray-300 transition">Annuler</button>
+        </div>
+    </div>
+
+    <div id="withdrawModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-[150]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-sm w-full p-6 sm:p-8 shadow-2xl text-center relative">
+            <div class="w-16 h-16 bg-red-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg text-2xl font-black"><i class="fas fa-money-bill-wave"></i></div>
+            <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase mb-2">Retirer des Fonds</h3>
+            <div class="space-y-3 mb-6"><input type="tel" id="withdrawPhone" placeholder="Numéro OM de réception" class="w-full p-4 border rounded-xl text-center font-bold text-sm dark:bg-slate-700 dark:text-white dark:border-gray-600 outline-none focus:ring-2 focus:ring-red-500"><input type="number" id="withdrawAmount" placeholder="Montant à retirer (FCFA)" class="w-full p-4 border rounded-xl text-center font-black text-xl text-red-500 dark:bg-slate-700 dark:border-gray-600 outline-none focus:ring-2 focus:ring-red-500"></div>
+            <button id="btn-confirm-withdraw" onclick="confirmWithdraw()" class="w-full bg-red-500 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg hover:bg-red-600 transition mb-3">Confirmer le retrait</button>
+            <button id="btn-cancel-withdraw" onclick="closeWithdrawModal()" class="w-full text-gray-400 dark:text-gray-500 text-[10px] uppercase font-bold hover:text-gray-600 dark:hover:text-gray-300 transition">Annuler</button>
+        </div>
+    </div>
+
+    <div id="checkoutModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-[150]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-sm w-full p-6 sm:p-8 shadow-2xl text-center relative overflow-y-auto max-h-[95vh]">
+            <div class="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg text-2xl font-black"><i class="fas fa-shopping-bag"></i></div>
+            <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase mb-2">Finaliser l'achat</h3>
+            <div class="bg-gray-50 dark:bg-slate-800 rounded-2xl p-4 mb-4 text-left border dark:border-gray-600">
+                <div class="flex justify-between items-center mb-2 border-b pb-2 dark:border-gray-700">
+                    <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Total à payer</span>
+                    <span id="wc-total" class="text-lg font-black text-gray-900 dark:text-white">0 FCFA</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Votre Solde Local</span>
+                    <span id="wc-balance" class="text-lg font-black text-blue-600 dark:text-blue-400">0 FCFA</span>
+                </div>
+            </div>
+            <div class="mb-4 text-left bg-blue-50 dark:bg-slate-800 p-3 rounded-2xl border border-blue-100 dark:border-gray-600">
+                <label class="text-[10px] font-bold text-blue-800 dark:text-blue-400 uppercase block mb-1"><i class="fas fa-map-marker-alt"></i> Lieu de livraison (Optionnel)</label>
+                <input type="text" id="checkoutLocation" placeholder="Ex: Boy-Rabe, Sica, Centre-ville..." class="w-full p-3 border rounded-xl text-xs dark:bg-slate-700 dark:text-white dark:border-gray-600 outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <p id="wc-error" class="hidden text-[10px] text-red-500 font-bold mb-4 bg-red-50 p-2 rounded-lg border border-red-200">Solde insuffisant pour le paiement local.</p>
+            <div class="flex flex-col gap-2 mb-4">
+                <button id="wc-confirm-btn" onclick="confirmWalletPayment()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase tracking-wider shadow-md hover:bg-blue-700 transition flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> Payer avec mon Solde</button>
+                <div class="text-xs text-gray-400 font-bold uppercase">OU</div>
+                <button onclick="confirmOMPayment()" class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold uppercase tracking-wider shadow-md hover:bg-orange-600 transition flex items-center justify-center gap-2"><i class="fas fa-mobile-alt"></i> Payer via Orange Money</button>
+            </div>
+            <button onclick="closeCheckoutModal()" class="w-full text-gray-400 dark:text-gray-500 text-[10px] uppercase font-bold hover:text-gray-600 dark:hover:text-gray-300 transition">Annuler</button>
+        </div>
+    </div>
+
+    <div id="sellModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <h3 class="text-xl sm:text-2xl font-black text-blue-900 dark:text-blue-400 uppercase mb-6">Nouvel Article</h3>
+            <form id="productForm" class="space-y-4">
+                <input type="text" id="pName" placeholder="Nom de l'article" class="w-full p-4 border dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none"><textarea id="pDesc" placeholder="Description courte..." class="w-full p-4 border dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white h-24 outline-none"></textarea>
+                <select id="pCategory" onchange="handleCategoryChange()" class="w-full p-3 sm:p-4 border dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white font-bold outline-none"></select>
+                <div id="deliveryContainer" class="flex gap-2 w-full transition-all"><input type="number" id="pDelDays" placeholder="Jours (ex: 2)" class="w-1/2 p-3 sm:p-4 border dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none" min="0"><input type="number" id="pDelHours" placeholder="Heures (ex: 12)" class="w-1/2 p-3 sm:p-4 border dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none" min="0" max="23"></div>
+                <div class="grid grid-cols-2 gap-4"><input type="number" id="pPrice" oninput="updateTax()" placeholder="Prix (FCFA)" class="p-3 sm:p-4 border dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none"><div id="stockContainerWrapper"><input type="number" id="pStock" placeholder="Stock" class="w-full p-3 sm:p-4 border dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none" min="1"></div></div>
+                <div class="bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-gray-600 rounded-2xl p-4 flex flex-col sm:flex-row sm:justify-between items-center shadow-sm text-center sm:text-left gap-2"><span class="text-[10px] font-bold text-blue-800 dark:text-blue-400 uppercase flex items-center justify-center sm:justify-start gap-2"><i class="fas fa-percentage text-blue-400"></i> Frais <span id="taxTierDisplay"></span> (<span id="taxRateDisplay"></span>)</span><span id="taxAmountDisplay" class="font-black text-blue-900 dark:text-white text-lg">0 FCFA</span></div>
+                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-4 text-center relative hover:bg-gray-50 dark:hover:bg-slate-800 transition"><input type="file" id="pImage" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewImage(event, 'imagePreview', 'imagePlaceholder')"><div id="imagePlaceholder" class="text-gray-400"><i class="fas fa-camera text-2xl mb-2"></i><p class="text-xs font-bold uppercase">Ajouter une photo</p></div><img id="imagePreview" class="hidden mx-auto max-h-32 rounded-lg object-contain"></div>
+                <button type="button" onclick="submitProduct()" class="w-full bg-blue-900 text-white py-4 sm:py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition text-sm">Publier l'annonce</button>
+                <button type="button" onclick="toggleModal()" class="w-full text-gray-400 dark:text-gray-500 text-xs py-2 uppercase font-bold hover:text-gray-600 dark:hover:text-gray-300 transition">Annuler</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="quickViewModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-[120]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto flex flex-col md:flex-row shadow-2xl relative">
+            <button onclick="closeQuickView()" class="absolute top-4 right-4 bg-white/80 dark:bg-black/50 hover:bg-red-500 hover:text-white text-gray-800 dark:text-white h-8 w-8 rounded-full flex items-center justify-center transition z-20"><i class="fas fa-times"></i></button>
+            <div class="md:w-1/2 bg-gray-100 dark:bg-slate-800 flex items-center justify-center p-6 md:p-8 relative"><img id="qv-img" class="max-h-52 md:max-h-96 object-contain rounded-xl shadow-lg"></div>
+            <div class="md:w-1/2 p-5 sm:p-8 flex flex-col justify-center">
+                <span id="qv-cat" class="text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2 block"></span><h2 id="qv-name" class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white leading-tight mb-4"></h2><p id="qv-desc" class="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed"></p><div id="qv-delivery" class="text-xs text-blue-600 dark:text-blue-400 mb-6 font-bold flex items-center gap-2"></div>
+                <div class="flex items-center gap-3 mb-6 bg-gray-50 dark:bg-slate-800 p-3 rounded-xl"><div id="qv-avatar-container" class="h-16 w-16 bg-blue-100 text-blue-800 rounded-xl flex items-center justify-center font-black overflow-hidden shrink-0 shadow-sm border-2 border-white"></div><div><p class="text-[9px] text-gray-500 dark:text-gray-400 uppercase font-bold mb-1">Vendu par</p><div class="flex items-center"><div id="qv-seller" class="font-black text-gray-900 dark:text-white text-sm tracking-wide"></div><div id="qv-seller-badges" class="seller-badges"></div></div></div></div>
+                <div class="flex justify-between items-end mb-8"><div><p class="text-[9px] text-gray-500 dark:text-gray-400 uppercase font-bold mb-1">Prix unitaire</p><p id="qv-price" class="text-3xl font-black text-blue-900 dark:text-blue-400"></p></div><div id="qv-stock" class="text-right"></div></div>
+                <div id="qv-actions" class="flex gap-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="authModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[110]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-sm w-full p-6 sm:p-8 shadow-2xl text-center transition-colors duration-300 overflow-y-auto max-h-[90vh]">
+            <h3 id="authTitle" class="text-xl sm:text-2xl font-black text-blue-900 dark:text-blue-400 uppercase mb-6">Connexion</h3>
+            <div class="space-y-4 text-left">
+                <div id="authPfpContainer" class="hidden border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-4 text-center relative hover:bg-gray-50 dark:hover:bg-slate-800 transition"><input type="file" id="authPfpInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewImage(event, 'authPfpPreview', 'authPfpPlaceholder')"><div id="authPfpPlaceholder" class="text-gray-400"><i class="fas fa-user-circle text-3xl mb-2"></i><p class="text-[10px] font-bold uppercase">Photo (Optionnel)</p></div><img id="authPfpPreview" class="hidden mx-auto h-20 w-20 rounded-full object-cover shadow-md border-2 border-white"></div>
+                <input type="text" id="authName" placeholder="Nom complet" class="hidden w-full p-4 border dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none"><input type="email" id="authEmail" placeholder="Email" class="w-full p-4 border dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none"><input type="tel" id="authPhone" placeholder="Numéro WhatsApp" class="hidden w-full p-4 border dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none"><input type="password" id="authPass" placeholder="Mot de passe" class="w-full p-4 border dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none">
+                <button onclick="handleAuth()" id="authBtn" class="w-full bg-blue-900 text-white py-4 rounded-2xl font-bold uppercase tracking-widest shadow-lg hover:bg-blue-800 transition">Continuer</button>
+                <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2"><span id="authMsg">Pas encore de compte ?</span><button onclick="toggleAuthMode()" id="authToggle" class="text-blue-600 dark:text-blue-400 font-bold ml-1 hover:underline">S'inscrire</button></p>
+            </div>
+            <button onclick="closeAuth()" class="mt-6 text-gray-400 dark:text-gray-500 text-[10px] uppercase font-bold hover:text-gray-600 dark:hover:text-gray-300 transition">Annuler</button>
+        </div>
+    </div>
+
+    <div id="myAdsModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 z-[105]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl w-full max-w-4xl p-4 sm:p-6 shadow-2xl overflow-y-auto max-h-[95vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-black text-blue-900 dark:text-blue-400 uppercase flex items-center gap-2"><i class="fas fa-list-ul text-blue-500"></i> Mes Annonces</h3><button onclick="toggleMyAdsModal()" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button></div>
+            <div class="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700/50 rounded-xl p-3 mb-4 text-[10px] sm:text-xs text-yellow-800 dark:text-yellow-400 flex items-center gap-2"><i class="fas fa-rocket text-yellow-500 text-lg"></i> <b>Astuce :</b> Utilisez la fusée pour sponsoriser (2000 FCFA), ou l'étiquette pour une Promo.</div>
+            <div id="my-ads-body" class="space-y-3 overflow-y-auto flex-grow pr-1"></div>
+        </div>
+    </div>
+
+    <div id="wishlistModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[105]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center mb-6"><h3 class="text-lg font-black text-pink-600 uppercase flex items-center gap-2"><i class="fas fa-heart"></i> Ma Liste d'Envies</h3><button onclick="toggleWishlistModal()" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button></div>
+            <div id="wishlist-body" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <div id="cartModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[105]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl overflow-y-auto max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-6"><h3 class="text-lg font-black text-blue-900 dark:text-blue-400 uppercase flex items-center gap-2"><i class="fas fa-shopping-cart text-blue-500"></i> Mon Panier</h3><button onclick="toggleCartModal()" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button></div>
+            <div id="cart-body" class="space-y-2 mb-6 flex-grow overflow-y-auto pr-1"></div>
+            <div class="border-t dark:border-gray-700 pt-4 flex flex-col sm:flex-row justify-between items-center gap-4"><div class="text-center sm:text-left"><p class="text-[10px] text-gray-500 font-bold uppercase">Total estimé</p><p id="cart-total" class="text-xl font-black text-blue-900 dark:text-white">0 FCFA</p></div><button onclick="startCheckout()" class="w-full sm:w-auto bg-green-500 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest shadow-lg hover:bg-green-600 transition flex items-center justify-center gap-2"><i class="fas fa-credit-card text-xl"></i> Commander tout</button></div>
+        </div>
+    </div>
+
+    <div id="profileModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[130]">
+        <div class="bg-white dark:bg-darkcard rounded-3xl max-w-sm w-full p-6 sm:p-8 shadow-2xl relative overflow-y-auto max-h-[95vh]">
+            <h3 class="text-xl font-black text-blue-900 dark:text-blue-400 uppercase mb-4 text-center">Mon Profil</h3>
+            <div id="profileSuccessMsg" class="hidden bg-green-100 border border-green-300 text-green-700 p-3 rounded-xl text-xs font-bold text-center mb-4 transition-all duration-300"><i class="fas fa-check-circle mr-1"></i> Profil mis à jour !</div>
+            <div id="editPfpContainer" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-4 text-center relative hover:bg-gray-50 dark:hover:bg-slate-800 transition mb-4"><input type="file" id="editPfpInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewImage(event, 'editPfpPreview', 'editPfpPlaceholder')"><div id="editPfpPlaceholder" class="text-gray-400"><i class="fas fa-camera text-3xl mb-2"></i><p class="text-[10px] font-bold uppercase">Changer la photo</p></div><img id="editPfpPreview" class="hidden mx-auto h-20 w-20 rounded-full object-cover shadow-md border-2 border-white"></div>
+            <div class="space-y-4">
+                <div><label class="text-[10px] font-bold text-gray-500 uppercase ml-2 mb-1 block">Nom complet</label><input type="text" id="editName" class="w-full p-3 border dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none"></div>
+                <div><label class="text-[10px] font-bold text-gray-500 uppercase ml-2 mb-1 block">Numéro WhatsApp</label><input type="tel" id="editPhone" class="w-full p-3 border dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none"></div>
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase ml-2 mb-1 block">Mot de passe actuel</label>
+                    <div class="relative mb-3">
+                        <input type="password" id="editPassCurrent" placeholder="Requis pour changer de mot de passe" class="w-full p-3 border dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none text-xs pr-10">
+                        <button type="button" onclick="togglePassVisibility('editPassCurrent', 'eyeIconCurrent')" class="absolute right-3 top-3 text-gray-400 hover:text-blue-500"><i id="eyeIconCurrent" class="fas fa-eye"></i></button>
+                    </div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase ml-2 mb-1 block">Nouveau mot de passe</label>
+                    <div class="relative">
+                        <input type="password" id="editPassNew" placeholder="Nouveau (laisser vide si inchangé)" class="w-full p-3 border dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-slate-700 dark:text-white outline-none text-xs pr-10">
+                        <button type="button" onclick="togglePassVisibility('editPassNew', 'eyeIconNew')" class="absolute right-3 top-3 text-gray-400 hover:text-blue-500"><i id="eyeIconNew" class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+                <button onclick="saveProfile()" class="w-full bg-blue-900 text-white py-4 rounded-xl font-bold uppercase tracking-widest shadow-lg hover:bg-blue-800 transition mt-4">Enregistrer</button>
+            </div>
+            <button onclick="closeProfile()" class="mt-4 w-full text-center text-gray-400 dark:text-gray-500 text-[10px] uppercase font-bold hover:text-gray-600 dark:hover:text-gray-300 transition">Fermer</button>
+        </div>
+    </div>
+
+    <button onclick="window.open('https://wa.me/23673001200?text=' + encodeURIComponent('Bonjour le support Centra Market. J\'ai besoin d\'aide.'), '_blank')" class="fixed bottom-6 right-6 bg-green-500 text-white h-14 w-14 rounded-full flex items-center justify-center shadow-2xl z-50 hover:scale-110 transition cursor-pointer"><i class="fab fa-whatsapp text-3xl"></i></button>
+
     <script>
-        // --- 1. CONFIGURATION API ---
+        // --- 🚀 CONFIGURATION API ---
         const API_URL = "https://centra-backend.vercel.app/api";
 
         const FOUNDERS = ['onealkoyapende@gmail.com', 'bechirsaniyalo@gmail.com'];
         let users = []; let products = []; let currentUser = null; let cart = []; let wishlist = [];
-        let categories = []; let tierDiscounts = { certified: 2, enterprise: 5, boutique: 3 };
-        let totalProfits = 0; let salesHistory = []; let pendingOrders = [];
+        let activeCheckoutItems = []; let activeCheckoutTotal = 0;
+        let categories = []; 
+        let tierDiscounts = { certified: 2, enterprise: 5, boutique: 3 };
+        let totalProfits = 0;
+        let salesHistory = [];
+        let pendingOrders = [];
         let defaultHero = { top: "Bienvenue sur Centra Global Market", title: "Importation & Vente", sub: "Chine • Dubaï • Afrique • 📍 Bangui, RCA" };
-        let heroText = defaultHero; let currentFilter = 'All'; let isLoginMode = true;
+        let heroText = defaultHero;
+        let currentFilter = 'All'; let isLoginMode = true;
 
         function safeGet(key, defaultVal) { try { return JSON.parse(localStorage.getItem(key)) || defaultVal; } catch (e) { return defaultVal; } }
 
-        // --- 2. FONCTION DE CHARGEMENT CLOUD ---
+        // --- ☁️ CLOUD DATA SYNC ---
         async function loadProductsFromAPI() {
             try {
                 const response = await fetch(`${API_URL}/products`);
                 const data = await response.json();
                 if (Array.isArray(data)) {
                     products = data;
+                    console.log("Données synchronisées avec Supabase 🟢");
                     renderAll();
-                    console.log("Données synchronisées avec le Cloud 🟢");
                 }
             } catch (error) {
                 console.error("Erreur API:", error);
-                // Fallback local si le serveur est down
                 products = safeGet('centraProducts', []);
                 renderAll();
             }
@@ -115,51 +433,53 @@
 
         window.onload = function() {
             try {
-                users = safeGet('centraUsers', []).filter(u => u && u.email);
+                let rawUsers = safeGet('centraUsers', []);
+                users = rawUsers.filter(u => u && typeof u === 'object' && typeof u.email === 'string' && u.email.trim() !== "");
                 currentUser = safeGet('centraSession', null);
                 cart = safeGet('centraCart', []);
                 wishlist = safeGet('centraWishlist', []);
                 heroText = safeGet('centraHeroText', defaultHero);
                 salesHistory = safeGet('centraSales', []);
+                if(!Array.isArray(salesHistory)) salesHistory = []; 
                 pendingOrders = safeGet('centraPendingOrders', []);
+                if(!Array.isArray(pendingOrders)) pendingOrders = []; 
                 totalProfits = Number(localStorage.getItem('centraProfits')) || 0;
                 tierDiscounts = safeGet('centraTierDiscounts', { certified: 2, enterprise: 5, boutique: 3 });
-                
                 let defaultCats = [ { id: 'c1', name: 'Électronique', tax: 10 }, { id: 'c2', name: 'Vêtements', tax: 8 }, { id: 'c3', name: 'Immobilier', tax: 5 }, { id: 'c4', name: 'Divers', tax: 5 }, { id: 'c5', name: 'Service', tax: 0 } ];
                 categories = safeGet('centraCategories', defaultCats);
 
-                // Appel au Cloud
+                // --- TRIGGER CLOUD LOAD ---
                 loadProductsFromAPI();
 
-                migrateData(); seedAdmins(); initTheme(); loadHeroText(); loadDiscounts(); buildCategoryUI(); updateAuthUI(); loadCustomLogo();
+                migrateData(); seedAdmins(); initTheme(); loadHeroText(); loadDiscounts(); buildCategoryUI(); updateAuthUI(); renderAll(); loadCustomLogo();
             } catch (error) {
                 console.error(error);
+                document.body.innerHTML = `<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #fee2e2; padding: 20px; text-align: center;"><div style="background: white; padding: 30px; border-radius: 20px; max-width: 400px;"><h1 style="color: #dc2626; margin-bottom: 10px;">⚠️ Base de données obsolète</h1><button onclick="localStorage.clear(); location.reload();" style="background: #dc2626; color: white; border: none; padding: 15px; border-radius: 10px; font-weight:bold; width: 100%;">Factory Reset (Requis)</button></div></div>`;
             }
         };
 
-        // --- 3. FONCTION PUBLIER (VERSION CLOUD) ---
+        // --- 🛒 CLOUD SUBMISSION ---
         async function submitProduct() {
             if(!currentUser) return;
-            const pName = document.getElementById('pName').value;
-            const pDesc = document.getElementById('pDesc').value;
-            const pCategory = document.getElementById('pCategory').value;
+            const pName = document.getElementById('pName').value; 
+            const pDesc = document.getElementById('pDesc').value; 
+            const pCategory = document.getElementById('pCategory').value; 
             const pPrice = document.getElementById('pPrice').value;
-            let pStock = document.getElementById('pStock').value;
-            const days = parseInt(document.getElementById('pDelDays').value) || 0;
-            const hours = parseInt(document.getElementById('pDelHours').value) || 0;
+            let pStock = document.getElementById('pStock').value; 
+            const days = parseInt(document.getElementById('pDelDays').value) || 0; 
+            const hours = parseInt(document.getElementById('pDelHours').value) || 0; 
             
             let deliveryStr = "";
-            if (pCategory !== 'Service') {
-                if (days > 0) deliveryStr += days + " Jour(s) ";
-                if (hours > 0) deliveryStr += hours + " Heure(s)";
-            } else { pStock = 999; }
-
-            const preview = document.getElementById('imagePreview');
-            if(!pName || !pPrice || preview.classList.contains('hidden')) {
-                alert("Veuillez remplir les champs et ajouter une photo.");
-                return;
+            if (pCategory === 'Service') { pStock = 999; } 
+            if(!pName || !pDesc || !pPrice || !pStock) { alert("Veuillez remplir tous les champs principaux."); return; }
+            if (pCategory !== 'Service') { 
+                if (days === 0 && hours === 0) { alert("Veuillez indiquer un délai de livraison."); return; } 
+                if (days > 0) deliveryStr += days + " Jour(s) "; 
+                if (hours > 0) deliveryStr += hours + " Heure(s)"; 
             }
-
+            const preview = document.getElementById('imagePreview'); 
+            if(preview.classList.contains('hidden') || !preview.src) { alert("Veuillez ajouter une image !"); return; }
+            
             const newProduct = {
                 name: pName,
                 description: pDesc,
@@ -167,15 +487,13 @@
                 price: parseFloat(pPrice),
                 stock: parseInt(pStock),
                 delivery: deliveryStr.trim(),
-                image: preview.src, 
+                image: preview.src,
                 seller: currentUser.name
             };
 
             try {
-                // UI Feedback
-                const btn = document.querySelector('button[onclick="submitProduct()"]');
-                const originalText = btn.innerText;
-                btn.innerText = "🚀 Envoi au serveur...";
+                const btn = event.target;
+                btn.innerText = "⏳ Publication en cours...";
                 btn.disabled = true;
 
                 const response = await fetch(`${API_URL}/products`, {
@@ -191,10 +509,10 @@
                     document.getElementById('productForm').reset();
                     document.getElementById('imagePreview').classList.add('hidden');
                     toggleModal();
-                    loadProductsFromAPI(); // Refresh from cloud
+                    loadProductsFromAPI(); // Reload immediately
                 }
             } catch (error) {
-                alert("Erreur: Impossible de joindre le serveur.");
+                alert("Erreur de connexion au serveur Cloud.");
             } finally {
                 const btn = document.querySelector('button[onclick="submitProduct()"]');
                 btn.innerText = "Publier l'annonce";
@@ -202,9 +520,567 @@
             }
         }
 
-        // [PASTE THE REST OF YOUR HELPER FUNCTIONS HERE: renderAll, toggleDarkMode, etc.]
-        // I have modified the core to use the API, but your UI functions like renderPublicGrid
-        // will now use the "products" array populated by the Cloud!
+        // --- THE REST OF YOUR ORIGINAL FUNCTIONS (COPY-PASTED EXACTLY) ---
+
+        function migrateData() {
+            let migrated = false;
+            users.forEach((u, index) => {
+                if (typeof u.balance === 'undefined') { u.balance = 0; migrated = true; }
+                if (!u.accountNumber) { u.accountNumber = index + 1; migrated = true; }
+                if (!u.companyName) { u.companyName = ""; migrated = true; }
+                if (!u.companyLogo) { u.companyLogo = ""; migrated = true; }
+                if (typeof u.isBoutique === 'undefined') { u.isBoutique = false; migrated = true; }
+                if (typeof u.isAdmin === 'undefined') { u.isAdmin = FOUNDERS.includes((u.email || '').toLowerCase()); migrated = true; }
+            });
+            products.forEach(p => { if (typeof p.salesCount === 'undefined') { p.salesCount = 0; migrated = true; } });
+            if (migrated) { localStorage.setItem('centraUsers', JSON.stringify(users)); saveData(); if(currentUser) currentUser = users.find(u => u.email === currentUser.email) || currentUser; localStorage.setItem('centraSession', JSON.stringify(currentUser)); }
+        }
+
+        function seedAdmins() {
+            const defaultAdmins = [
+                { accountNumber: 1, name: "Admin Oneal", email: "onealkoyapende@gmail.com", pass: "Oneal09", phone: "70984015", pfp: "", isCertified: true, isEnterprise: true, isBoutique: false, isAdmin: true, balance: 0, companyName: "", companyLogo: "" },
+                { accountNumber: 2, name: "Admin Bechir", email: "bechirsaniyalo@gmail.com", pass: "Nolwen_669", phone: "+23673001200", pfp: "", isCertified: true, isEnterprise: true, isBoutique: false, isAdmin: true, balance: 0, companyName: "", companyLogo: "" }
+            ];
+            let needsSave = false; defaultAdmins.forEach(admin => { if (!users.find(u => (u.email || '').toLowerCase() === admin.email.toLowerCase())) { users.push(admin); needsSave = true; } });
+            if(needsSave) { try { localStorage.setItem('centraUsers', JSON.stringify(users)); } catch(e){} }
+        }
+
+        function getTaxRate(userObj, catName) {
+            let cat = categories.find(c => c.name === catName); let baseTax = cat ? cat.tax : 10;
+            if(catName === 'Service' && (!cat || cat.tax === 0)) return 0; 
+            let discount = 0; 
+            if (userObj && userObj.isEnterprise) discount = tierDiscounts.enterprise; 
+            else if (userObj && userObj.isBoutique) discount = tierDiscounts.boutique;
+            else if (userObj && userObj.isCertified) discount = tierDiscounts.certified;
+            let finalTax = baseTax - discount; return finalTax < 0 ? 0 : finalTax;
+        }
+
+        function calcPotential(userName) {
+            let userObj = users.find(u => u.name === userName); let userProds = products.filter(p => p.seller === userName && p.stock > 0 && !p.isSold && (p.status === 'Validé' || p.status === 'Sponsorisé'));
+            let sum = 0;
+            userProds.forEach(p => { let price = p.salePrice ? Number(p.salePrice) : Number(p.price); let rate = getTaxRate(userObj, p.category); let stockCalc = p.category === 'Service' ? 1 : Number(p.stock); sum += (price * stockCalc) * (rate / 100); });
+            return sum;
+        }
+
+        function buildCategoryUI() {
+            const filterContainer = document.getElementById('category-filters'); const selectContainer = document.getElementById('pCategory'); if(!filterContainer || !selectContainer) return;
+            let filterHtml = '<button onclick="filterCategory(\'All\')" id="btn-All" class="filter-btn bg-blue-600 text-white px-5 py-2 rounded-full text-xs font-bold shadow-md btn-transition whitespace-nowrap">Tout</button>';
+            let selectHtml = '';
+            categories.forEach(c => {
+                filterHtml += `<button onclick="filterCategory('${c.name}')" id="btn-${c.name.replace(/\s+/g, '')}" class="filter-btn bg-white dark:bg-darkcard border dark:border-gray-600 text-gray-700 dark:text-gray-300 px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap btn-transition">${c.name}</button>`;
+                if(c.name === 'Service') { selectHtml += `<option value="${c.name}" id="opt-service" class="hidden font-bold text-purple-600">${c.name} (Pro)</option>`; } else { selectHtml += `<option value="${c.name}">${c.name}</option>`; }
+            });
+            filterHtml += '<button onclick="filterCategory(\'Promo\')" id="btn-Promo" class="filter-btn bg-white dark:bg-darkcard border border-red-200 dark:border-red-900 text-red-500 px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap btn-transition shadow-sm"><i class="fas fa-fire mr-1"></i> Promos</button>';
+            filterContainer.innerHTML = filterHtml; selectContainer.innerHTML = selectHtml; filterCategory('All'); 
+        }
+
+        function renderAdminCategories() {
+            const tbody = document.getElementById('admin-categories-body'); if(!tbody) return; let html = '';
+            categories.forEach(c => {
+                let isService = c.name === 'Service';
+                html += `<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border dark:border-gray-700">
+                    <span class="font-bold dark:text-white text-xs">${c.name}</span>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1"><input type="number" value="${c.tax}" onchange="updateCatTax('${c.id}', this.value)" class="w-14 text-center border rounded p-1 text-xs dark:bg-slate-700 dark:text-white dark:border-gray-600" ${isService ? 'disabled' : ''}> <span class="text-xs text-gray-500">%</span></div>
+                        ${isService ? '<span class="text-[9px] text-gray-400 w-6 text-center">Fixe</span>' : `<button onclick="deleteCategory('${c.id}')" class="text-red-500 hover:text-red-700 p-1 w-6"><i class="fas fa-trash"></i></button>`}
+                    </div>
+                </div>`;
+            }); tbody.innerHTML = html;
+        }
+
+        function addCategory() {
+            const nameInput = document.getElementById('newCatName'); const taxInput = document.getElementById('newCatTax'); const name = nameInput.value.trim(); const tax = Number(taxInput.value) || 0;
+            if(!name) return; if(categories.find(c => c.name.toLowerCase() === name.toLowerCase())) { alert("Cette catégorie existe déjà."); return; }
+            categories.push({ id: 'c' + Date.now(), name: name, tax: tax }); localStorage.setItem('centraCategories', JSON.stringify(categories));
+            nameInput.value = ''; taxInput.value = ''; buildCategoryUI(); renderAdminCategories(); renderAll();
+        }
+
+        function updateCatTax(id, newTax) { let cat = categories.find(cat => cat.id === id); if(cat) { cat.tax = Number(newTax); localStorage.setItem('centraCategories', JSON.stringify(categories)); renderAll(); } }
+        function deleteCategory(id) { let cat = categories.find(cat => cat.id === id); if(cat && confirm(`Supprimer la catégorie ${cat.name} ?`)) { categories = categories.filter(c => c.id !== id); localStorage.setItem('centraCategories', JSON.stringify(categories)); buildCategoryUI(); renderAdminCategories(); renderAll(); } }
+
+        function loadDiscounts() { 
+            if(document.getElementById('discount-certified')) { 
+                document.getElementById('discount-certified').value = tierDiscounts.certified || 2; 
+                document.getElementById('discount-enterprise').value = tierDiscounts.enterprise || 5; 
+                document.getElementById('discount-boutique').value = tierDiscounts.boutique || 3; 
+            } 
+        }
+        function saveDiscounts() { 
+            tierDiscounts = { 
+                certified: Number(document.getElementById('discount-certified').value), 
+                enterprise: Number(document.getElementById('discount-enterprise').value),
+                boutique: Number(document.getElementById('discount-boutique').value)
+            }; 
+            localStorage.setItem('centraTierDiscounts', JSON.stringify(tierDiscounts)); renderAll(); 
+        }
+
+        function toggleUiSettingsModal() { document.getElementById('uiSettingsModal').classList.toggle('hidden'); }
+
+        function openEnterpriseBrandModal(email) {
+            const u = users.find(x => x.email === email); if(!u) return;
+            document.getElementById('eb-email').value = u.email; document.getElementById('ebCompanyName').value = u.companyName || "";
+            const select = document.getElementById('ebExistingSelect');
+            select.innerHTML = '<option value="">-- Créer une nouvelle marque --</option>';
+            let existingBrands = [];
+            users.forEach(user => {
+                if((user.isEnterprise || user.isBoutique) && user.companyName && !existingBrands.some(b => b.name === user.companyName)) {
+                    existingBrands.push({name: user.companyName, logo: user.companyLogo});
+                    select.innerHTML += `<option value="${user.companyName}">${user.companyName}</option>`;
+                }
+            });
+            select.value = u.companyName || "";
+            const preview = document.getElementById('ebLogoPreview'); const placeholder = document.getElementById('ebLogoPlaceholder');
+            if(u.companyLogo) { preview.src = u.companyLogo; preview.classList.remove('hidden'); placeholder.classList.add('hidden'); } else { preview.src = ''; preview.classList.add('hidden'); placeholder.classList.remove('hidden'); }
+            document.getElementById('enterpriseBrandModal').classList.remove('hidden');
+        }
+
+        function loadExistingEnterprise(compName) {
+            if(!compName) { document.getElementById('ebCompanyName').value = ''; document.getElementById('ebLogoPreview').src = ''; document.getElementById('ebLogoPreview').classList.add('hidden'); document.getElementById('ebLogoPlaceholder').classList.remove('hidden'); return; }
+            let existing = users.find(u => (u.isEnterprise || u.isBoutique) && u.companyName === compName);
+            if(existing) {
+                document.getElementById('ebCompanyName').value = existing.companyName;
+                if(existing.companyLogo) {
+                    document.getElementById('ebLogoPreview').src = existing.companyLogo;
+                    document.getElementById('ebLogoPreview').classList.remove('hidden');
+                    document.getElementById('ebLogoPlaceholder').classList.add('hidden');
+                } else {
+                    document.getElementById('ebLogoPreview').src = '';
+                    document.getElementById('ebLogoPreview').classList.add('hidden');
+                    document.getElementById('ebLogoPlaceholder').classList.remove('hidden');
+                }
+            }
+        }
+        
+        function saveEnterpriseBranding() {
+            const email = document.getElementById('eb-email').value; 
+            const compName = document.getElementById('ebCompanyName').value.trim(); 
+            const preview = document.getElementById('ebLogoPreview');
+            let u = users.find(x => x.email === email);
+            if(u) { 
+                u.companyName = compName; 
+                if(!preview.classList.contains('hidden') && preview.getAttribute('src') && preview.getAttribute('src').startsWith('data:image')) {
+                    u.companyLogo = preview.getAttribute('src'); 
+                } else {
+                    u.companyLogo = ""; 
+                }
+                try{ localStorage.setItem('centraUsers', JSON.stringify(users)); } catch(e) {
+                    alert(e.name === 'QuotaExceededError' ? "Mémoire du téléphone pleine!" : "Erreur.");
+                    return;
+                } 
+                renderAdminUsers(); renderPublicGrid(); closeEnterpriseBrandModal(); updateAuthUI(); 
+            }
+        }
+        
+        function clearEnterpriseBranding() { document.getElementById('ebCompanyName').value = ""; document.getElementById('ebLogoPreview').src = ""; document.getElementById('ebLogoPreview').classList.add('hidden'); document.getElementById('ebLogoPlaceholder').classList.remove('hidden'); }
+
+        function compressImage(file, callback) {
+            const reader = new FileReader(); reader.onload = function(e) {
+                const img = new Image(); img.onload = function() {
+                    const canvas = document.createElement('canvas'); const MAX_WIDTH = 400; let width = img.width; let height = img.height;
+                    if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+                    canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); callback(canvas.toDataURL('image/jpeg', 0.4)); 
+                }; img.src = e.target.result;
+            }; reader.readAsDataURL(file);
+        }
+
+        function previewImage(event, previewId, placeholderId) { const file = event.target.files[0]; if(!file) return; compressImage(file, function(compressed) { document.getElementById(previewId).src = compressed; document.getElementById(previewId).classList.remove('hidden'); if(document.getElementById(placeholderId)) document.getElementById(placeholderId).classList.add('hidden'); }); }
+        function loadCustomLogo() { try { const savedLogo = localStorage.getItem('centraLogo'); const imgEl = document.getElementById('logo-img'); const txtEl = document.getElementById('logo-text'); if(savedLogo && savedLogo.startsWith('data:image')) { imgEl.src = savedLogo; imgEl.classList.remove('hidden'); txtEl.classList.add('hidden'); } else { imgEl.src = ''; imgEl.classList.add('hidden'); txtEl.classList.remove('hidden'); } } catch(e) {} }
+        function updateCustomLogo(event) { const file = event.target.files[0]; if(!file) return; compressImage(file, function(compressed) { try { localStorage.setItem('centraLogo', compressed); loadCustomLogo(); alert("Logo mis à jour !"); } catch(e) { alert(e.name === 'QuotaExceededError' ? "MÉMOIRE PLEINE" : "Erreur: " + e.message); } }); }
+        function resetCustomLogo() { localStorage.removeItem('centraLogo'); loadCustomLogo(); alert("Logo restauré."); }
+        function loadHeroText() { document.getElementById('hero-top').innerText = heroText.top; document.getElementById('hero-title').innerText = heroText.title; document.getElementById('hero-sub').innerText = heroText.sub; if(document.getElementById('edit-hero-top')) { document.getElementById('edit-hero-top').value = heroText.top; document.getElementById('edit-hero-title').value = heroText.title; document.getElementById('edit-hero-sub').value = heroText.sub; } }
+        function saveHeroText() { heroText = { top: document.getElementById('edit-hero-top').value, title: document.getElementById('edit-hero-title').value, sub: document.getElementById('edit-hero-sub').value }; localStorage.setItem('centraHeroText', JSON.stringify(heroText)); loadHeroText(); }
+        function initTheme() { try { if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.documentElement.classList.add('dark'); document.getElementById('theme-icon')?.classList.replace('fa-moon', 'fa-sun'); } else { document.documentElement.classList.remove('dark'); document.getElementById('theme-icon')?.classList.replace('fa-sun', 'fa-moon'); } } catch(e){} }
+        function toggleDarkMode() { const html = document.documentElement; const icon = document.getElementById('theme-icon'); if (html.classList.contains('dark')) { html.classList.remove('dark'); try{localStorage.theme = 'light';}catch(e){} icon?.classList.replace('fa-sun', 'fa-moon'); } else { html.classList.add('dark'); try{localStorage.theme = 'dark';}catch(e){} icon?.classList.replace('fa-moon', 'fa-sun'); } }
+
+        function toggleAuth() { document.getElementById('authModal').classList.toggle('hidden'); }
+        function closeAuth() { document.getElementById('authModal').classList.add('hidden'); }
+        function handleCategoryChange() { updateTax(); const cat = document.getElementById('pCategory').value; const delContainer = document.getElementById('deliveryContainer'); const stockContainer = document.getElementById('stockContainerWrapper'); if (cat === 'Service') { delContainer.classList.add('hidden'); stockContainer.classList.add('hidden'); } else { delContainer.classList.remove('hidden'); stockContainer.classList.remove('hidden'); } }
+        function toggleModal() { if(!currentUser) { toggleAuth(); return; } const optService = document.getElementById('opt-service'); if(optService) { if(currentUser.isEnterprise) optService.classList.remove('hidden'); else { optService.classList.add('hidden'); if(document.getElementById('pCategory').value === 'Service') { document.getElementById('pCategory').selectedIndex = 0; } } } handleCategoryChange(); document.getElementById('sellModal').classList.toggle('hidden'); }
+        function toggleAdminMode() { document.body.classList.toggle('admin-mode'); renderAll(); }
+        function closeQuickView() { document.getElementById('quickViewModal').classList.add('hidden'); }
+        function toggleCartModal() { document.getElementById('cartModal').classList.toggle('hidden'); if(!document.getElementById('cartModal').classList.contains('hidden')) renderCart(); }
+        function toggleWishlistModal() { document.getElementById('wishlistModal').classList.toggle('hidden'); renderWishlist(); }
+        function toggleMyAdsModal() { document.getElementById('myAdsModal').classList.toggle('hidden'); if(!document.getElementById('myAdsModal').classList.contains('hidden')) renderMyAds(); }
+        function closeProfile() { document.getElementById('profileModal').classList.add('hidden'); }
+        
+        function openProfile() { 
+            if (!currentUser) return; 
+            document.getElementById('editName').value = currentUser.name;  
+            document.getElementById('editPhone').value = currentUser.phone || ''; 
+            document.getElementById('editPassCurrent').value = ''; 
+            document.getElementById('editPassNew').value = ''; 
+            document.getElementById('profileSuccessMsg').classList.add('hidden'); 
+            const preview = document.getElementById('editPfpPreview'); const placeholder = document.getElementById('editPfpPlaceholder'); 
+            if (currentUser.pfp && currentUser.pfp.startsWith('data:image')) { preview.src = currentUser.pfp; preview.classList.remove('hidden'); placeholder.classList.add('hidden'); } 
+            else { preview.src = ''; preview.classList.add('hidden'); placeholder.classList.remove('hidden'); } 
+            document.getElementById('profileModal').classList.remove('hidden'); 
+        }
+
+        function togglePassVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if(input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
+            else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
+        }
+
+        function toggleUserMenu() { const menu = document.getElementById('userMenu'); if (menu.classList.contains('menu-hidden')) { menu.classList.remove('menu-hidden'); menu.classList.add('menu-visible'); } else { menu.classList.add('menu-hidden'); menu.classList.remove('menu-visible'); } }
+        function logout() { currentUser = null; localStorage.removeItem('centraSession'); cart = []; saveCart(); updateAuthUI(); renderAll(); }
+        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('authTitle').innerText = isLoginMode ? "Connexion" : "Inscription"; document.getElementById('authName').classList.toggle('hidden', isLoginMode); document.getElementById('authPhone').classList.toggle('hidden', isLoginMode); document.getElementById('authPfpContainer').classList.toggle('hidden', isLoginMode); document.getElementById('authBtn').innerText = isLoginMode ? "Se Connecter" : "Créer un compte"; document.getElementById('authMsg').innerText = isLoginMode ? "Pas encore de compte ?" : "Déjà inscrit ?"; document.getElementById('authToggle').innerText = isLoginMode ? "S'inscrire" : "Se connecter"; }
+
+        function handleAuth() {
+            const name = document.getElementById('authName').value.trim(); const email = document.getElementById('authEmail').value.trim().toLowerCase(); const pass = document.getElementById('authPass').value; const phone = document.getElementById('authPhone').value.trim();
+            if (isLoginMode) { const user = users.find(u => (u.email||'').toLowerCase() === email && u.pass === pass); if (user) { currentUser = user; localStorage.setItem('centraSession', JSON.stringify(user)); closeAuth(); updateAuthUI(); renderAll(); } else alert("Email ou mot de passe incorrect");
+            } else {
+                if (!name || !email || !pass || !phone) { alert("Tous les champs sont requis"); return; } if (users.find(u => (u.email||'').toLowerCase() === email)) { alert("Cet email est déjà utilisé."); return; }
+                let pfp = ""; const preview = document.getElementById('authPfpPreview'); if(!preview.classList.contains('hidden')) pfp = preview.src;
+                const newUser = { accountNumber: users.length + 1, name, email, pass, phone, pfp, isCertified: false, isEnterprise: false, isBoutique: false, isAdmin: false, balance: 0, companyName: "", companyLogo: "" };
+                try { users.push(newUser); localStorage.setItem('centraUsers', JSON.stringify(users)); currentUser = newUser; localStorage.setItem('centraSession', JSON.stringify(newUser)); closeAuth(); updateAuthUI(); renderAll(); } catch(e) { alert(e.name === 'QuotaExceededError' ? "MÉMOIRE PLEINE" : "Erreur d'inscription."); }
+            }
+        }
+
+        function saveProfile() {
+            const newName = document.getElementById('editName').value.trim(); 
+            const newPhone = document.getElementById('editPhone').value.trim(); 
+            const currentPass = document.getElementById('editPassCurrent').value;
+            const newPass = document.getElementById('editPassNew').value;
+            if (!newName || !newPhone) { alert("Le nom et le numéro sont obligatoires."); return; }
+            if (newPass) { if (!currentPass) { alert("Veuillez entrer votre mot de passe actuel pour le modifier."); return; } if (currentPass !== currentUser.pass) { alert("Mot de passe actuel incorrect !"); return; } }
+            let newPfp = currentUser.pfp; 
+            const preview = document.getElementById('editPfpPreview'); 
+            if (!preview.classList.contains('hidden') && preview.getAttribute('src') && preview.getAttribute('src').startsWith('data:image')) { newPfp = preview.getAttribute('src'); }
+            const oldName = currentUser.name; 
+            currentUser.name = newName; currentUser.phone = newPhone; currentUser.pfp = newPfp;
+            if (newPass) currentUser.pass = newPass;
+            const userIndex = users.findIndex(u => (u.email||'').toLowerCase() === (currentUser.email||'').toLowerCase()); 
+            if (userIndex !== -1) { users[userIndex].name = newName; users[userIndex].phone = newPhone; users[userIndex].pfp = newPfp; if (newPass) users[userIndex].pass = newPass; }
+            if (oldName !== newName) { products.forEach(p => { if (p.seller === oldName) p.seller = newName; }); }
+            try { localStorage.setItem('centraUsers', JSON.stringify(users)); localStorage.setItem('centraSession', JSON.stringify(currentUser)); saveData(); document.getElementById('profileSuccessMsg').classList.remove('hidden'); updateAuthUI(); renderAll(); setTimeout(function(){ closeProfile(); }, 1500); } catch(e) { alert("Erreur."); }
+        }
+
+        function updateAuthUI() {
+            const container = document.getElementById('user-auth-section'); const adminBtn = document.getElementById('adminBtn'); 
+            if (currentUser) {
+                if (currentUser.isAdmin) adminBtn.style.display = 'inline-block'; else { adminBtn.style.display = 'none'; document.body.classList.remove('admin-mode'); }
+                const safeName = currentUser.name || "User"; const firstName = safeName.split(' ')[0]; const cartCount = cart.length;
+                const avatarHtml = (currentUser.pfp && currentUser.pfp.startsWith('data:image')) ? `<img src="${currentUser.pfp}" class="h-full w-full rounded-full object-cover">` : '<div class="h-full w-full bg-blue-100 text-blue-800 rounded-full flex items-center justify-center font-black"><i class="fas fa-user"></i></div>';
+                let badgeHtml = ''; if(cartCount > 0) badgeHtml = `<span id="cart-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black h-4 w-4 rounded-full flex items-center justify-center shadow-sm border border-white cart-bounce">${cartCount}</span>`;
+                const isEnt = currentUser.isEnterprise;
+                const isBout = currentUser.isBoutique;
+                let headerBgClass = 'bg-gray-50 dark:bg-slate-800 border-b dark:border-gray-700';
+                let roleText = 'Connecté en tant que';
+                let brandName = firstName;
+                if (isEnt) { headerBgClass = 'bg-yellow-100 dark:bg-yellow-900/40 border-b-4 border-yellow-500'; roleText = '<span class="text-yellow-600 dark:text-yellow-400"><i class="fas fa-building"></i> MARQUE ENTREPRISE</span>'; brandName = currentUser.companyName || firstName; } else if (isBout) { headerBgClass = 'bg-pink-100 dark:bg-pink-900/40 border-b-4 border-pink-500'; roleText = '<span class="text-pink-600 dark:text-pink-400"><i class="fas fa-store"></i> BOUTIQUE</span>'; brandName = currentUser.companyName || firstName; }
+                let menuHtml = `<div class="relative"><button onclick="toggleUserMenu()" class="h-8 w-8 sm:h-9 sm:w-9 bg-blue-100 text-blue-800 rounded-full font-black text-xs sm:text-sm flex items-center justify-center border-2 border-white shadow-sm hover:bg-blue-200 transition relative overflow-hidden p-0">${avatarHtml}${badgeHtml}</button>`;
+                menuHtml += `<div id="userMenu" class="menu-hidden absolute right-0 mt-2 w-56 bg-white dark:bg-darkcard rounded-2xl shadow-xl border dark:border-gray-700 overflow-hidden z-[100]">`;
+                menuHtml += `<div class="px-4 py-3 ${headerBgClass} flex items-center gap-3"><div class="h-8 w-8 rounded-full overflow-hidden shrink-0">${avatarHtml}</div><div class="truncate"><p class="text-[9px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">${roleText}</p><p class="text-sm font-black text-blue-900 dark:text-white truncate">${brandName}</p></div></div>`;
+                menuHtml += `<div class="px-4 py-3 bg-blue-50 dark:bg-slate-800/50 border-b dark:border-gray-700"><div class="flex justify-between items-center mb-1"><span class="text-[10px] text-blue-800 dark:text-blue-400 font-bold uppercase"><i class="fas fa-wallet"></i> Mon Solde</span></div><p class="text-xl font-black text-blue-900 dark:text-white mb-2">${(currentUser.balance || 0).toLocaleString()} F</p><div class="flex gap-2"><button onclick="openDepositModal(); toggleUserMenu()" class="flex-1 bg-orange-500 text-white text-[9px] font-bold uppercase py-1.5 rounded-lg hover:bg-orange-600 transition"><i class="fas fa-plus"></i> Recharger</button><button onclick="openWithdrawModal(); toggleUserMenu()" class="flex-1 bg-green-500 text-white text-[9px] font-bold uppercase py-1.5 rounded-lg hover:bg-green-600 transition"><i class="fas fa-arrow-down"></i> Retirer</button></div></div>`;
+                menuHtml += `<button onclick="openProfile(); toggleUserMenu()" class="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-100 dark:hover:bg-slate-700 transition flex items-center gap-3"><i class="fas fa-user-edit text-purple-500 w-4"></i> Modifier Profil</button>`;
+                menuHtml += `<button onclick="toggleWishlistModal(); toggleUserMenu()" class="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-200 font-bold hover:bg-pink-50 dark:hover:bg-slate-700 transition flex items-center gap-3 border-t dark:border-gray-700"><i class="fas fa-heart text-pink-500 w-4"></i> Favoris <span class="text-[10px] bg-gray-200 dark:bg-slate-600 px-2 py-0.5 rounded-full ml-auto">${wishlist.length}</span></button>`;
+                menuHtml += `<button onclick="toggleCartModal(); toggleUserMenu()" class="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-200 font-bold hover:bg-blue-50 dark:hover:bg-slate-700 transition flex items-center gap-3 border-t dark:border-gray-700"><i class="fas fa-shopping-cart text-blue-500 w-4"></i> Mon Panier <span class="text-[10px] bg-gray-200 dark:bg-slate-600 px-2 py-0.5 rounded-full ml-auto">${cartCount}</span></button>`;
+                menuHtml += `<button onclick="toggleMyAdsModal(); toggleUserMenu()" class="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-200 font-bold hover:bg-blue-50 dark:hover:bg-slate-700 transition flex items-center gap-3 border-t dark:border-gray-700"><i class="fas fa-list-ul text-blue-500 w-4"></i> Mes Annonces</button>`;
+                menuHtml += `<button onclick="logout()" class="w-full text-left px-4 py-3 text-sm text-red-500 font-bold hover:bg-red-50 dark:hover:bg-slate-700 transition border-t dark:border-gray-700 flex items-center gap-3"><i class="fas fa-sign-out-alt w-4"></i> Déconnexion</button></div></div>`;
+                container.innerHTML = menuHtml;
+            } else { adminBtn.style.display = 'none'; document.body.classList.remove('admin-mode'); container.innerHTML = `<button onclick="toggleAuth()" class="bg-gray-100 dark:bg-slate-700 text-blue-900 dark:text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-bold text-[10px] uppercase transition hover:bg-gray-200 dark:hover:bg-slate-600 shadow-sm whitespace-nowrap">Connexion</button>`; }
+        }
+
+        function updateTax() {
+            const catName = document.getElementById('pCategory').value; const rate = getTaxRate(currentUser, catName);
+            let tierText = "Normal"; let tierClass = "text-gray-600";
+            if (currentUser && currentUser.isEnterprise) { tierText = "Pro"; tierClass = "text-yellow-600"; } else if (currentUser && currentUser.isBoutique) { tierText = "Boutique"; tierClass = "text-pink-600"; } else if (currentUser && currentUser.isCertified) { tierText = "Certifié"; tierClass = "text-blue-600"; }
+            document.getElementById('taxTierDisplay').innerText = tierText; document.getElementById('taxTierDisplay').className = tierClass; document.getElementById('taxRateDisplay').innerText = rate + '%';
+            const basePrice = Number(document.getElementById('pPrice').value) || 0; document.getElementById('taxAmountDisplay').innerText = Math.round(basePrice * (rate / 100)).toLocaleString() + ' FCFA';
+        }
+
+        function filterCategory(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('.filter-btn').forEach(function(btn) { if(btn.id === 'btn-Promo') { btn.classList.replace('bg-red-500', 'bg-white'); btn.classList.replace('text-white', 'text-red-500'); if(!btn.classList.contains('dark:bg-darkcard')) btn.classList.add('dark:bg-darkcard'); } else { btn.classList.replace('bg-blue-600', 'bg-white'); btn.classList.replace('text-white', 'text-gray-700'); if(!btn.classList.contains('dark:bg-darkcard')) btn.classList.add('dark:bg-darkcard'); } });
+            const sanitizedId = 'btn-' + cat.replace(/\s+/g, ''); const activeBtn = document.getElementById(sanitizedId);
+            if(activeBtn) { if(cat === 'Promo') { activeBtn.classList.replace('bg-white', 'bg-red-500'); activeBtn.classList.replace('text-red-500', 'text-white'); activeBtn.classList.remove('dark:bg-darkcard'); } else { activeBtn.classList.replace('bg-white', 'bg-blue-600'); activeBtn.classList.replace('text-gray-700', 'text-white'); activeBtn.classList.remove('dark:bg-darkcard'); } }
+            if (cat === 'hot') { document.querySelectorAll('.filter-btn').forEach(btn => { btn.classList.replace('bg-blue-600', 'bg-white'); btn.classList.replace('text-white', 'text-gray-700'); btn.classList.add('dark:bg-darkcard'); }); }
+            renderPublicGrid();
+        }
+
+        function renderPublicGrid() {
+            const grid = document.getElementById('public-grid'); if(!grid) return; grid.innerHTML = '';
+            let query = (document.getElementById('searchInput')?.value || '').toLowerCase(); let sort = document.getElementById('sortSelect')?.value || 'newest';
+            if(sort === 'hot') currentFilter = 'hot';
+            let filtered = products.filter(function(p) { if(p.status !== 'Validé' && p.status !== 'Sponsorisé') return false; if(currentFilter === 'Promo' && (!p.salePrice || p.stock <= 0 || p.isSold)) return false; if(currentFilter === 'hot' && (p.salesCount || 0) < 3) return false; if(currentFilter !== 'All' && currentFilter !== 'Promo' && currentFilter !== 'hot' && p.category !== currentFilter) return false; if(query && !(p.name||'').toLowerCase().includes(query) && !(p.seller||'').toLowerCase().includes(query)) return false; return true; });
+            filtered.sort(function(a,b) { if(sort === 'hot') return (b.salesCount || 0) - (a.salesCount || 0); if(a.isSponsored && !b.isSponsored) return -1; if(!a.isSponsored && b.isSponsored) return 1; let aPrice = a.salePrice ? Number(a.salePrice) : Number(a.price); let bPrice = b.salePrice ? Number(b.salePrice) : Number(b.price); if(sort === 'price_asc') return aPrice - bPrice; if(sort === 'price_desc') return bPrice - aPrice; return b.id - a.id; });
+            if(filtered.length === 0) { grid.innerHTML = '<div class="col-span-full text-center text-gray-500 py-10 font-bold">Aucun produit trouvé.</div>'; return; }
+            let finalHtml = '';
+            filtered.forEach(function(p) {
+                const isSoldOut = p.stock <= 0 || p.isSold;
+                const sponsoredClass = p.isSponsored ? 'sponsored-border' : 'border border-gray-100 dark:border-gray-700';
+                const soldOutBadge = isSoldOut ? `<div class="absolute inset-0 bg-white/60 flex items-center justify-center z-10"><span class="bg-red-600 text-white font-black px-3 py-1 rounded-lg shadow-lg rotate-[-12deg] text-xs uppercase border-2 border-white">Épuisé</span></div>` : '';
+                const canAdd = !isSoldOut && (!currentUser || p.seller !== currentUser.name);
+                const addToCartBtn = canAdd ? `<button onclick="event.stopPropagation(); addToCart(${p.id})" class="bg-blue-100 hover:bg-blue-600 text-blue-600 hover:text-white h-8 w-8 rounded-full flex items-center justify-center transition shadow-sm" title="Ajouter au panier"><i class="fas fa-cart-plus"></i></button>` : '';
+                let hotBadge = (p.salesCount >= 3) ? `<div class="absolute bottom-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-black px-2 py-1 rounded-lg z-20 shadow-md flex items-center gap-1 animate-pulse border border-white"><i class="fas fa-fire text-yellow-300"></i> TOP VENTE</div>` : '';
+                let sellerObj = users.find(u => u.name === p.seller);
+                let sellerDisplay = '';
+                if (sellerObj && (sellerObj.isEnterprise || sellerObj.isBoutique) && sellerObj.companyName) {
+                    let logoHtml = sellerObj.companyLogo ? `<img src="${sellerObj.companyLogo}" class="h-10 w-10 object-contain rounded bg-white shadow-sm shrink-0">` : `<div class="h-10 w-10 rounded bg-blue-100 flex items-center justify-center shrink-0"><i class="fas fa-building text-blue-500 text-lg"></i></div>`;
+                    let tagText = sellerObj.isEnterprise ? "Officiel" : "Boutique";
+                    let tagColor = sellerObj.isEnterprise ? "text-yellow-600" : "text-pink-600";
+                    sellerDisplay = `<div class="flex items-center gap-3 mt-2 mb-3 bg-gray-100 dark:bg-slate-800 p-2 rounded-xl border dark:border-gray-700 w-full"> ${logoHtml} <div class="flex flex-col overflow-hidden"> <span class="font-black text-[11px] text-gray-800 dark:text-white truncate uppercase tracking-wider">${sellerObj.companyName}</span> <span class="text-[9px] ${tagColor} font-bold uppercase"><i class="fas ${sellerObj.isEnterprise ? 'fa-building' : 'fa-store'}"></i> ${tagText}</span> </div> </div>`;
+                } else { sellerDisplay = `<div class="flex items-center gap-1 mb-2 mt-1 text-[10px] text-gray-500 dark:text-gray-400"><i class="fas fa-user-circle"></i> <span class="truncate">${p.seller}</span></div>`; }
+                let priceDisplay = '';
+                if (p.salePrice) { priceDisplay = `<p class="text-[10px] font-bold text-gray-400 line-through">${Number(p.price).toLocaleString()} F</p><p class="text-lg font-black text-red-500 ${isSoldOut?'text-gray-400':''}">${Number(p.salePrice).toLocaleString()} <span class="text-[10px]">F</span></p>`; } else { priceDisplay = `<p class="text-lg font-black text-blue-900 dark:text-blue-400 ${isSoldOut?'text-gray-400':''}">${Number(p.price).toLocaleString()} <span class="text-[10px]">F</span></p>`; }
+                let card = `<div class="bg-white dark:bg-darkcard rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer flex flex-col relative ${sponsoredClass}" onclick="openQuickView(${p.id})">`;
+                if(p.isSponsored) card += `<div class="absolute top-0 left-0 bg-yellow-500 text-white text-[9px] font-black px-3 py-1 rounded-br-lg z-10"><i class="fas fa-rocket mr-1"></i> SPONSORISÉ</div>`;
+                if(p.salePrice && !isSoldOut) card += `<div class="absolute top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-1 rounded-lg z-10 shadow-sm animate-pulse">PROMO</div>`;
+                card += `<div class="h-40 overflow-hidden relative bg-gray-50 dark:bg-slate-800 flex items-center justify-center p-4">${hotBadge}${soldOutBadge}<img src="${p.image}" class="max-h-full object-contain hover:scale-110 transition duration-500 ${isSoldOut?'sold-out-img':''}"></div>`;
+                card += `<div class="p-4 flex flex-col flex-grow"><p class="text-[9px] text-blue-500 font-bold uppercase tracking-wider mb-1">${p.category}</p>`;
+                card += `<h3 class="font-black text-gray-800 dark:text-white text-sm truncate mb-1 ${isSoldOut?'text-gray-400':''}">${p.name}</h3>`;
+                card += sellerDisplay;
+                card += `<div class="mt-auto flex justify-between items-end"><div>${priceDisplay}<p class="text-[9px] font-bold text-gray-400 mt-1">${p.category!=='Service'?'Stock: '+p.stock:'Service Pro'}</p></div>${addToCartBtn}</div></div></div>`;
+                finalHtml += card;
+            });
+            grid.innerHTML = finalHtml;
+        }
+
+        function openQuickView(id) {
+            const p = products.find(prod => prod.id === id); if(!p) return;
+            document.getElementById('qv-img').src = p.image; document.getElementById('qv-cat').innerText = p.category; document.getElementById('qv-name').innerText = p.name; document.getElementById('qv-desc').innerText = p.description; 
+            if (p.salePrice) { document.getElementById('qv-price').innerHTML = `<span class="text-sm text-gray-400 line-through mr-2">${Number(p.price).toLocaleString()} F</span><span class="text-red-500">${Number(p.salePrice).toLocaleString()} FCFA</span>`; } else { document.getElementById('qv-price').innerText = Number(p.price).toLocaleString() + " FCFA"; }
+            document.getElementById('qv-delivery').innerHTML = p.delivery ? `<i class="fas fa-truck text-blue-500"></i> Livraison/Délai: <span class="text-gray-800 dark:text-white">${p.delivery}</span>` : '';
+            const sellerUser = users.find(u => u.name === p.seller);
+            if (sellerUser && (sellerUser.isEnterprise || sellerUser.isBoutique) && sellerUser.companyName) {
+                document.getElementById('qv-avatar-container').innerHTML = sellerUser.companyLogo ? `<img src="${sellerUser.companyLogo}" class="h-full w-full object-contain bg-white">` : `<i class="fas fa-building text-blue-600 text-2xl"></i>`;
+                document.getElementById('qv-seller').innerText = sellerUser.companyName;
+                document.getElementById('qv-seller').className = "font-black text-blue-900 dark:text-blue-400 text-sm tracking-wide uppercase";
+            } else {
+                document.getElementById('qv-avatar-container').innerHTML = (sellerUser && sellerUser.pfp && sellerUser.pfp.startsWith('data:image')) ? `<img src="${sellerUser.pfp}" class="h-full w-full object-cover">` : `<i class="fas fa-user text-blue-600 text-2xl"></i>`;
+                document.getElementById('qv-seller').innerText = p.seller;
+                document.getElementById('qv-seller').className = "font-bold text-gray-900 dark:text-white text-sm";
+            }
+            let badges = '';
+            if (sellerUser && sellerUser.isEnterprise && sellerUser.companyName) { badges = `<span class="badge badge-enterprise ml-2">🏢 Officiel</span>`; } else if (sellerUser && sellerUser.isBoutique && sellerUser.companyName) { badges = `<span class="badge badge-boutique ml-2">🏪 Boutique</span>`; } else if (sellerUser && sellerUser.isCertified) { badges = `<span class="badge badge-blue-check ml-1"><i class="fas fa-check-circle"></i></span>`; }
+            document.getElementById('qv-seller-badges').innerHTML = badges;
+            let stockHtml = '';
+            if (p.category !== 'Service') stockHtml = (p.stock > 0 && !p.isSold) ? `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">En Stock (${p.stock})</span>` : '<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Épuisé</span>';
+            else stockHtml = '<span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold">Service Pro</span>';
+            document.getElementById('qv-stock').innerHTML = stockHtml;
+            let actionHtml = '';
+            if (p.stock > 0 && !p.isSold && (!currentUser || p.seller !== currentUser.name)) {
+                actionHtml += `<button onclick="directBuy(${p.id})" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-black uppercase text-[10px] sm:text-xs transition shadow-lg"><i class="fas fa-bolt mr-1"></i> Acheter Directement</button>`;
+                actionHtml += `<button onclick="addToCart(${p.id}); closeQuickView()" class="w-12 h-12 flex items-center justify-center bg-blue-100 hover:bg-blue-600 text-blue-600 hover:text-white rounded-xl transition shadow-sm" title="Ajouter au panier"><i class="fas fa-cart-plus text-xl"></i></button>`;
+            }
+            actionHtml += `<button onclick="toggleWishlist(${p.id}); closeQuickView()" class="w-12 h-12 flex items-center justify-center border-2 border-gray-200 dark:border-gray-600 rounded-xl transition ${wishlist.includes(p.id) ? 'text-red-500 border-red-200 bg-red-50' : 'text-gray-400 hover:text-red-500'}" title="Favoris"><i class="fas fa-heart text-xl"></i></button>`;
+            document.getElementById('qv-actions').innerHTML = actionHtml; document.getElementById('quickViewModal').classList.remove('hidden');
+        }
+
+        function toggleWishlist(productId) { if (!currentUser) { alert("Connectez-vous"); return; } const index = wishlist.indexOf(productId); if (index > -1) wishlist.splice(index, 1); else wishlist.push(productId); try{ localStorage.setItem('centraWishlist', JSON.stringify(wishlist)); }catch(e){} updateAuthUI(); renderAll(); }
+        function renderWishlist() {
+            const tbody = document.getElementById('wishlist-body'); tbody.innerHTML = '';
+            if(wishlist.length === 0) { tbody.innerHTML = '<div class="p-8 text-center text-gray-400 font-bold italic">Votre liste est vide.</div>'; return; }
+            wishlist.forEach(id => { const p = products.find(prod => prod.id === id); if(!p) return; let finalP = p.salePrice ? p.salePrice : p.price; tbody.innerHTML += `<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border dark:border-gray-700"> <div class="flex items-center gap-3 w-1/2"><img src="${p.image}" class="h-10 w-10 rounded object-cover shadow-sm"><span class="font-bold text-xs dark:text-white truncate">${p.name}</span></div> <div class="flex items-center justify-end gap-3 w-1/2"><span class="font-black ${p.salePrice ? 'text-red-500' : 'dark:text-white'} text-xs">${Number(finalP).toLocaleString()} F</span><button onclick="toggleWishlist(${p.id}); toggleWishlistModal(); toggleWishlistModal()" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash"></i></button></div> </div>`; });
+        }
+
+        function addToCart(productId) {
+            if (!currentUser) { toggleAuth(); return; } const product = products.find(p => p.id === productId); if (!product) return;
+            if (product.seller === currentUser.name) { alert("Action impossible"); return; } if (Number(product.stock) <= 0 || product.isSold) { alert("Épuisé"); return; } if (cart.some(item => item.id === productId)) { alert("Déjà dans le panier."); return; }
+            cart.push(product); saveCart(); updateAuthUI(); renderAll(); const badge = document.getElementById('cart-badge'); if(badge) { badge.classList.remove('cart-bounce'); void badge.offsetWidth; badge.classList.add('cart-bounce'); }
+        }
+        function removeFromCart(productId) { cart = cart.filter(item => item.id !== productId); saveCart(); renderCart(); updateAuthUI(); renderAll(); }
+
+        function renderCart() {
+            const tbody = document.getElementById('cart-body'); const totalEl = document.getElementById('cart-total'); tbody.innerHTML = '';
+            let updatedCart = []; let removedItems = false;
+            cart.forEach(cartItem => { const liveProduct = products.find(p => p.id === cartItem.id); if (liveProduct && Number(liveProduct.stock) > 0 && !liveProduct.isSold) { updatedCart.push(cartItem); } else { removedItems = true; } });
+            if (removedItems) { cart = updatedCart; saveCart(); updateAuthUI(); renderAll(); alert("Articles épuisés retirés du panier."); }
+            if (cart.length === 0) { tbody.innerHTML = '<div class="p-8 text-center text-gray-400 font-bold italic"><i class="fas fa-shopping-basket text-3xl mb-3 block text-gray-300"></i> Panier vide.</div>'; totalEl.innerText = "0 FCFA"; return; }
+            let total = 0; let finalHtml = '';
+            cart.forEach(item => { let itemPrice = item.salePrice ? Number(item.salePrice) : Number(item.price); total += itemPrice; finalHtml += `<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border dark:border-gray-700"> <div class="flex items-center gap-3 w-1/2"> <img src="${item.image}" class="h-10 w-10 rounded-lg object-cover shadow-sm shrink-0"> <div class="truncate"><p class="font-bold text-gray-800 dark:text-white text-[10px] sm:text-xs truncate">${item.name}</p><p class="text-[9px] text-blue-600 dark:text-blue-400 font-bold truncate"><i class="fas fa-user-circle"></i> ${item.seller}</p></div> </div> <div class="flex items-center justify-end gap-3 w-1/2"> <p class="font-black ${item.salePrice ? 'text-red-500' : 'dark:text-white'} text-[10px] sm:text-xs">${itemPrice.toLocaleString()} F</p> <button onclick="removeFromCart(${item.id})" class="text-gray-400 hover:text-red-500 transition p-2"><i class="fas fa-times"></i></button> </div> </div>`; }); tbody.innerHTML = finalHtml; totalEl.innerText = total.toLocaleString() + " FCFA";
+        }
+
+        function directBuy(productId) { if (!currentUser) { toggleAuth(); return; } const product = products.find(p => p.id === productId); if (!product) return; activeCheckoutItems = [product]; activeCheckoutTotal = product.salePrice ? Number(product.salePrice) : Number(p.price); closeQuickView(); openCheckoutModal(); }
+        function startCheckout() { if (cart.length === 0) return; activeCheckoutItems = [...cart]; activeCheckoutTotal = cart.reduce((sum, item) => sum + (item.salePrice ? Number(item.salePrice) : Number(item.price)), 0); toggleCartModal(); openCheckoutModal(); }
+
+        function openCheckoutModal() {
+            document.getElementById('wc-total').innerText = activeCheckoutTotal.toLocaleString() + " FCFA"; document.getElementById('wc-balance').innerText = (currentUser.balance || 0).toLocaleString() + " FCFA";
+            const btn = document.getElementById('wc-confirm-btn'); const err = document.getElementById('wc-error');
+            if ((currentUser.balance || 0) < activeCheckoutTotal) { btn.classList.replace('bg-blue-600', 'bg-gray-400'); btn.classList.remove('hover:bg-blue-700'); btn.disabled = true; err.classList.remove('hidden'); } else { btn.classList.replace('bg-gray-400', 'bg-blue-600'); btn.classList.add('hover:bg-blue-700'); btn.disabled = false; err.classList.add('hidden'); }
+            document.getElementById('checkoutModal').classList.remove('hidden');
+        }
+        function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
+
+        function buildPendingOrder(type, locationText) {
+            let orderItems = [];
+            activeCheckoutItems.forEach(item => { let p = products.find(prod => prod.id === item.id); if (p && p.category !== 'Service') { p.stock = Math.max(0, p.stock - 1); if (p.stock === 0) p.isSold = true; } let itemPrice = item.salePrice ? Number(item.salePrice) : Number(item.price); orderItems.push({ id: item.id, name: item.name, category: item.category, seller: item.seller, price: itemPrice }); });
+            let order = { id: Date.now(), buyer: currentUser.name, buyerEmail: currentUser.email, phone: currentUser.phone || 'N/A', items: orderItems, total: activeCheckoutTotal, type: type, location: locationText, date: new Date().toLocaleString(), status: 'En attente' };
+            pendingOrders.push(order);
+            try{ localStorage.setItem('centraPendingOrders', JSON.stringify(pendingOrders)); } catch(e){}
+            saveData(); 
+            if (activeCheckoutItems.length === cart.length) { cart = []; saveCart(); }
+            return order;
+        }
+
+        function confirmWalletPayment() {
+            if((currentUser.balance || 0) < activeCheckoutTotal) return;
+            const locationInput = document.getElementById('checkoutLocation').value.trim();
+            const locationText = locationInput ? locationInput : 'Non précisé';
+            currentUser.balance -= activeCheckoutTotal; 
+            const uIndex = users.findIndex(u => u.email === currentUser.email); 
+            if(uIndex > -1) users[uIndex].balance = currentUser.balance;
+            try{ localStorage.setItem('centraUsers', JSON.stringify(users)); localStorage.setItem('centraSession', JSON.stringify(currentUser)); }catch(e){}
+            let order = buildPendingOrder('Solde Local', locationText);
+            let message = `🛒 *COMMANDE EN ATTENTE DE VALIDATION*\n\n👤 *Acheteur :* ${order.buyer}\n📞 *Tél:* ${order.phone}\n📍 *Livraison:* ${order.location}\n💳 *Payé par:* Solde Local\n\nArticles :\n`;
+            order.items.forEach((item, index) => { const sellerObj = users.find(u => u.name === item.seller); const sPhone = sellerObj && sellerObj.phone ? sellerObj.phone : 'N/A'; message += `${index + 1}. *${item.name}*\n Vendeur: ${item.seller} (${sPhone})\n Prix: ${item.price.toLocaleString()} F\n\n`; });
+            message += `*TOTAL BLOQUÉ: ${order.total.toLocaleString()} FCFA*\n*Solde Restant:* ${currentUser.balance.toLocaleString()} FCFA\n\n_L'argent est bloqué jusqu'à la validation par un Admin._`;
+            closeCheckoutModal(); renderAll(); updateAuthUI(); 
+            window.open("https://wa.me/23673001200?text=" + encodeURIComponent(message), "_blank");
+        }
+
+        function confirmOMPayment() {
+            const locationInput = document.getElementById('checkoutLocation').value.trim();
+            const locationText = locationInput ? locationInput : 'Non précisé';
+            let order = buildPendingOrder('Orange Money', locationText);
+            let message = `🛒 *COMMANDE EN ATTENTE DE VALIDATION*\n\n👤 *Acheteur :* ${order.buyer}\n📞 *Tél:* ${order.phone}\n📍 *Livraison:* ${order.location}\n💳 *Paiement prévu:* Orange Money\n\nArticles :\n`;
+            order.items.forEach((item, index) => { const sellerObj = users.find(u => u.name === item.seller); const sPhone = sellerObj && sellerObj.phone ? sellerObj.phone : 'N/A'; message += `${index + 1}. *${item.name}*\n Vendeur: ${item.seller} (${sPhone})\n Prix: ${item.price.toLocaleString()} F\n\n`; });
+            message += `*TOTAL À PAYER: ${order.total.toLocaleString()} FCFA*\n\n_Je souhaite régler par Orange Money. Comment procéder ?_`;
+            closeCheckoutModal(); renderAll(); updateAuthUI(); 
+            window.open("https://wa.me/23673001200?text=" + encodeURIComponent(message), "_blank");
+        }
+
+        function openDepositModal() { document.getElementById('depositPhone').value = ''; document.getElementById('depositAmount').value = ''; document.getElementById('depositModal').classList.remove('hidden'); }
+        function closeDepositModal() { document.getElementById('depositModal').classList.add('hidden'); }
+        function confirmDeposit() {
+            const amt = document.getElementById('depositAmount').value; const phone = document.getElementById('depositPhone').value; if(!amt || Number(amt) <= 0 || !phone) { alert("Montant ou numéro invalide"); return; }
+            let waMsg = `💰 *DEMANDE DE RECHARGE*\n\n👤 Utilisateur: ${currentUser.name}\n📞 Tél Compte: ${currentUser.phone || 'N/A'}\n📱 Numéro OM d'envoi: ${phone}\n💵 Montant envoyé: ${amt} FCFA\n\nVeuillez vérifier la réception et créditer mon compte via le Panel Admin.`;
+            window.open("https://wa.me/23673001200?text=" + encodeURIComponent(waMsg), "_blank");
+            closeDepositModal();
+        }
+
+        function openWithdrawModal() { document.getElementById('withdrawPhone').value = ''; document.getElementById('withdrawAmount').value = ''; document.getElementById('withdrawAmount').max = currentUser.balance || 0; document.getElementById('withdrawModal').classList.remove('hidden'); }
+        function closeWithdrawModal() { document.getElementById('withdrawModal').classList.add('hidden'); }
+        function confirmWithdraw() {
+            const amt = Number(document.getElementById('withdrawAmount').value); const phone = document.getElementById('withdrawPhone').value; if(!amt || amt <= 0 || amt > (currentUser.balance || 0)) { alert("Solde insuffisant ou montant invalide"); return; } if(!phone) { alert("Veuillez entrer le numéro OM"); return; }
+            currentUser.balance -= amt; const uIndex = users.findIndex(u => u.email === currentUser.email); if(uIndex > -1) users[uIndex].balance = currentUser.balance; try{ localStorage.setItem('centraUsers', JSON.stringify(users)); localStorage.setItem('centraSession', JSON.stringify(currentUser)); }catch(e){} 
+            let waMsg = `💸 *DEMANDE DE RETRAIT*\n\n👤 Utilisateur: ${currentUser.name}\n📞 Tél Compte: ${currentUser.phone || 'N/A'}\n📱 Envoyer l'argent sur OM: ${phone}\n💵 Montant à recevoir: ${amt} FCFA\n\n(Ce montant a déjà été déduit de mon solde local).`;
+            window.open("https://wa.me/23673001200?text=" + encodeURIComponent(waMsg), "_blank");
+            closeWithdrawModal(); updateAuthUI(); renderAll();
+        }
+
+        function renderAll() { 
+            renderPublicGrid(); 
+            if(document.body.classList.contains('admin-mode')) { renderAdminPendingOrders(); renderAdminCategories(); renderAdminTable(); renderAdminUsers(); renderAdminSales(); } 
+        }
+
+        function renderAdminPendingOrders() {
+            const container = document.getElementById('admin-pending-body');
+            const badge = document.getElementById('pending-count-badge');
+            if(!container || !badge) return;
+            badge.innerText = pendingOrders.length;
+            if(pendingOrders.length === 0) { container.innerHTML = '<p class="text-center text-blue-500 font-bold text-xs py-6">Aucune commande en attente.</p>'; return; }
+            let html = '';
+            pendingOrders.forEach(o => { let itemsList = o.items.map(i => `• 1x ${i.name} <span class="text-gray-400">(${i.seller})</span> - ${i.price.toLocaleString()} F`).join('<br>'); let typeColor = o.type === 'Orange Money' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'; html += `<div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-blue-200 dark:border-blue-900 mb-3 relative overflow-hidden"> <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div> <div class="flex justify-between items-start mb-2 ml-2"> <div> <p class="font-black text-gray-800 dark:text-white text-sm">${o.buyer}</p> <p class="text-[9px] text-gray-500"><i class="fas fa-phone"></i> ${o.phone} | <i class="fas fa-map-marker-alt text-red-400"></i> ${o.location}</p> </div> <span class="px-2 py-1 rounded text-[9px] font-black uppercase ${typeColor}">${o.type}</span> </div> <div class="text-[10px] text-gray-600 dark:text-gray-300 mb-3 ml-2 border-l-2 border-gray-100 dark:border-gray-700 pl-2"> ${itemsList} </div> <div class="flex items-center justify-between mt-3 ml-2 border-t dark:border-gray-700 pt-3"> <span class="font-black text-blue-600 text-sm">TOTAL: ${o.total.toLocaleString()} F</span> <div class="flex gap-2"> <button onclick="cancelOrder(${o.id})" class="bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 px-3 py-1.5 rounded-lg text-[10px] font-bold transition">Annuler</button> <button onclick="validateOrder(${o.id})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-md transition">Valider</button> </div> </div> </div>`; });
+            container.innerHTML = html;
+        }
+
+        function validateOrder(orderId) {
+            let orderIndex = pendingOrders.findIndex(o => o.id === orderId); if(orderIndex === -1) return; let order = pendingOrders[orderIndex];
+            let taxesCollected = 0; let newSale = { id: Date.now(), items: [], total: order.total, buyer: order.buyer + " (" + order.type + ")", date: new Date().toLocaleString() };
+            order.items.forEach(item => { let sellerObj = users.find(u => u.name === item.seller); let taxRate = getTaxRate(sellerObj, item.category); if(order.type === 'Solde Local') { taxesCollected += (item.price * (taxRate / 100)); } newSale.items.push(`1x ${item.name} (${item.price.toLocaleString()} F)`); let liveProd = products.find(p => p.id === item.id); if(liveProd) liveProd.salesCount = (liveProd.salesCount || 0) + 1; });
+            if(order.type === 'Solde Local' && taxesCollected > 0) { let activeAdmins = users.filter(u => u.isAdmin); if(activeAdmins.length > 0) { let splitProfit = taxesCollected / activeAdmins.length; activeAdmins.forEach(adminAcc => { adminAcc.balance = (adminAcc.balance || 0) + splitProfit; let aIndex = users.findIndex(u => u.email === adminAcc.email); if(aIndex > -1) users[aIndex].balance = adminAcc.balance; if(currentUser && currentUser.email === adminAcc.email) currentUser.balance = adminAcc.balance; }); } totalProfits += taxesCollected; localStorage.setItem('centraProfits', totalProfits); }
+            salesHistory.unshift(newSale); if(salesHistory.length > 50) salesHistory.pop(); pendingOrders.splice(orderIndex, 1);
+            try { localStorage.setItem('centraSales', JSON.stringify(salesHistory)); localStorage.setItem('centraPendingOrders', JSON.stringify(pendingOrders)); localStorage.setItem('centraUsers', JSON.stringify(users)); } catch(e) {}
+            saveData(); renderAll(); updateAuthUI();
+        }
+
+        function cancelOrder(orderId) {
+            if(!confirm("Annuler cette commande et restaurer le stock ? (Remboursement automatique si Solde Local)")) return;
+            let orderIndex = pendingOrders.findIndex(o => o.id === orderId); if(orderIndex === -1) return; let order = pendingOrders[orderIndex];
+            order.items.forEach(item => { let liveProd = products.find(p => p.id === item.id); if(liveProd && liveProd.category !== 'Service') { liveProd.stock += 1; liveProd.isSold = false; } });
+            if(order.type === 'Solde Local') { let buyer = users.find(u => u.email === order.buyerEmail); if(buyer) { buyer.balance = (buyer.balance || 0) + order.total; if(currentUser && currentUser.email === order.buyerEmail) currentUser.balance = buyer.balance; } }
+            pendingOrders.splice(orderIndex, 1);
+            try { localStorage.setItem('centraPendingOrders', JSON.stringify(pendingOrders)); localStorage.setItem('centraUsers', JSON.stringify(users)); if(currentUser) localStorage.setItem('centraSession', JSON.stringify(currentUser)); } catch(e) {}
+            saveData(); renderAll(); updateAuthUI();
+        }
+
+        function renderAdminSales() {
+            const container = document.getElementById('admin-sales-body'); if(!container) return; let html = '';
+            let validSales = [];
+            try { if (Array.isArray(salesHistory)) { validSales = salesHistory.filter(s => s && typeof s === 'object' && s.date); } else { salesHistory = []; } } catch(e) { salesHistory = []; }
+            document.getElementById('stat-sales').innerText = validSales.length;
+            if(validSales.length === 0) { container.innerHTML = '<p class="text-center text-gray-400 text-[10px] py-10">Aucune vente enregistrée.</p>'; return; }
+            const recentSales = validSales.slice(0, 5);
+            recentSales.forEach(s => { try { let itemsList = Array.isArray(s.items) ? s.items.join('<br>• ') : (s.items || "Article inconnu"); let safeDate = s.date ? s.date.split(',')[0] : 'Inconnu'; html += `<div class="bg-gray-50 dark:bg-slate-800 p-3 rounded-xl border dark:border-gray-700 mb-2"> <div class="flex justify-between items-start mb-2"> <p class="font-bold text-gray-800 dark:text-white text-[10px]"><i class="fas fa-shopping-bag text-green-500 mr-1"></i> ${s.buyer || 'Client'}</p> <p class="text-[9px] text-gray-400">${safeDate}</p> </div> <div class="text-[9px] text-gray-500 dark:text-gray-400 mb-2 leading-relaxed break-words">• ${itemsList}</div> <div class="text-right border-t dark:border-gray-700 pt-2"><span class="font-black text-blue-600 dark:text-blue-400 text-xs">${(s.total || 0).toLocaleString()} F</span></div> </div>`; } catch(e) { console.error("Skip bad sale data", e); } }); 
+            container.innerHTML = html;
+        }
+
+        function clearSalesHistory() { if(confirm("Attention : Voulez-vous vraiment effacer tout l'historique des ventes ?")) { salesHistory = []; try { localStorage.setItem('centraSales', JSON.stringify([])); } catch(e) {} renderAdminSales(); } }
+        function toggleUserType(email, type) { let u = users.find(x => x.email === email); if(u) { if(type === 'certified') { u.isCertified = !u.isCertified; if(u.isCertified) { u.isEnterprise = false; u.isBoutique = false; } } if(type === 'enterprise') { u.isEnterprise = !u.isEnterprise; if(u.isEnterprise) { u.isCertified = false; u.isBoutique = false; } } if(type === 'boutique') { u.isBoutique = !u.isBoutique; if(u.isBoutique) { u.isCertified = false; u.isEnterprise = false; } } try{ localStorage.setItem('centraUsers', JSON.stringify(users)); }catch(e){} renderAdminUsers(); renderAdminTable(); renderPublicGrid(); updateAuthUI(); } }
+
+        function renderAdminUsers() {
+            const container = document.getElementById('admin-users-body'); if(!container) return;
+            const query = (document.getElementById('admin-user-search')?.value || '').toLowerCase(); let html = '';
+            let totalUserCredit = users.reduce((sum, u) => sum + (Number(u.balance) || 0), 0);
+            document.getElementById('stat-credit').innerText = totalUserCredit.toLocaleString() + ' F';
+            users.filter(u => { let n = (u.name || '').toLowerCase(); let e = (u.email || '').toLowerCase(); let p = (u.phone || '').toLowerCase(); return n.includes(query) || e.includes(query) || p.includes(query); }).forEach(u => {
+                let badge = '';
+                if (FOUNDERS.includes(u.email)) badge = '<span class="bg-purple-600 text-white border border-purple-700 px-2 py-1 rounded-lg font-black text-[9px] shadow-sm"><i class="fas fa-crown"></i> Super Admin</span>';
+                else if (u.isAdmin) badge = '<span class="bg-purple-100 text-purple-800 border border-purple-200 dark:border-purple-700 px-2 py-1 rounded-lg font-bold text-[9px] shadow-sm"><i class="fas fa-shield-alt"></i> Admin</span>';
+                else if (u.isEnterprise) badge = '<span class="bg-yellow-100 text-yellow-800 border border-yellow-200 dark:border-yellow-700 px-2 py-1 rounded-lg font-bold text-[9px] shadow-sm"><i class="fas fa-building"></i> Pro</span>';
+                else if (u.isBoutique) badge = '<span class="bg-pink-100 text-pink-800 border border-pink-200 dark:border-pink-700 px-2 py-1 rounded-lg font-bold text-[9px] shadow-sm"><i class="fas fa-store"></i> Boutique</span>';
+                else if (u.isCertified) badge = '<span class="bg-blue-100 text-blue-800 border border-blue-200 dark:border-blue-700 px-2 py-1 rounded-lg font-bold text-[9px] shadow-sm"><i class="fas fa-check-circle"></i> Certifié</span>';
+                else badge = '<span class="bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400 border dark:border-gray-600 px-2 py-1 rounded-lg font-bold text-[9px]">Normal</span>';
+                let gainsPotentiels = calcPotential(u.name);
+                let actions = '';
+                if (FOUNDERS.includes(u.email)) { actions = '<span class="text-[9px] text-gray-400 font-bold uppercase w-full text-center py-2"><i class="fas fa-lock"></i> Fondateur Intouchable</span>'; } else { actions = `<button onclick="toggleAdminRole('${u.email}')" class="flex-1 py-2 rounded-lg ${u.isAdmin ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-50 text-purple-600 hover:bg-purple-100'} transition" title="Super Admin"><i class="fas fa-shield-alt"></i></button> <button onclick="adminAddCredit('${u.email}')" class="flex-1 py-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition" title="Solde"><i class="fas fa-wallet"></i></button> <button onclick="viewUserProducts('${u.name}')" class="flex-1 py-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition" title="Annonces"><i class="fas fa-box-open"></i></button> <button onclick="toggleUserType('${u.email}', 'certified')" class="flex-1 py-2 rounded-lg ${u.isCertified ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'} transition" title="Certifié"><i class="fas fa-check-circle"></i></button> <button onclick="toggleUserType('${u.email}', 'boutique')" class="flex-1 py-2 rounded-lg ${u.isBoutique ? 'bg-pink-500 text-white hover:bg-pink-600' : 'bg-pink-50 text-pink-600 hover:bg-pink-100'} transition" title="Boutique"><i class="fas fa-store"></i></button> <button onclick="toggleUserType('${u.email}', 'enterprise')" class="flex-1 py-2 rounded-lg ${u.isEnterprise ? 'bg-yellow-500 text-white hover:bg-yellow-600' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'} transition" title="Entreprise"><i class="fas fa-building"></i></button> `; if (u.isEnterprise || u.isBoutique) { actions += `<button onclick="openEnterpriseBrandModal('${u.email}')" class="flex-1 py-2 rounded-lg bg-orange-100 text-orange-600 hover:bg-orange-200 transition" title="Personnaliser Marque/Boutique"><i class="fas fa-paint-brush"></i></button>`; } actions += `<button onclick="deleteUserAccount('${u.email}')" class="flex-1 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition" title="Supprimer"><i class="fas fa-trash"></i></button>`; }
+                let pfpHtml = (u.pfp && u.pfp.startsWith('data:image')) ? `<img src="${u.pfp}" class="h-10 w-10 rounded-full object-cover shadow-sm bg-white shrink-0">` : '<div class="h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm shrink-0"><i class="fas fa-user"></i></div>';
+                html += `<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-gray-700 flex flex-col gap-4 shadow-sm relative transition hover:shadow-md"> <div class="absolute top-4 right-4">${badge}</div> <div class="flex items-center gap-3"> ${pfpHtml} <div class="pr-16 truncate"> <p class="font-bold text-gray-800 dark:text-white truncate text-sm">${u.name || 'Inconnu'} <span class="text-[9px] text-gray-400 font-normal">#${u.accountNumber}</span></p> <p class="text-[10px] text-gray-500 truncate">${u.phone || 'N/A'} • ${u.email || 'Pas d\'email'}</p> </div> </div> <div class="flex bg-gray-50 dark:bg-slate-700/50 rounded-lg p-2 border dark:border-gray-700"> <div class="w-1/2 border-r dark:border-gray-600 text-center"> <p class="text-[9px] uppercase text-gray-400 font-bold">Solde Compte</p> <p class="font-black text-blue-600 dark:text-blue-400">${(u.balance || 0).toLocaleString()} F</p> </div> <div class="w-1/2 text-center"> <p class="text-[9px] uppercase text-gray-400 font-bold">Gains Potentiels</p> <p class="font-black text-green-500">+${Math.round(gainsPotentiels).toLocaleString()} F</p> </div> </div> <div class="flex flex-wrap gap-1 border-t dark:border-gray-700 pt-3">${actions}</div> </div>`;
+            }); container.innerHTML = html;
+        }
+
+        function toggleAdminRole(email) { if (FOUNDERS.includes(email.toLowerCase())) { alert("Impossible de modifier le statut des fondateurs."); return; } let u = users.find(x => x.email === email); if (u) { u.isAdmin = !u.isAdmin; try { localStorage.setItem('centraUsers', JSON.stringify(users)); } catch(e){} renderAdminUsers(); } }
+        function adminAddCredit(email) { let amount = prompt(`Combien de FCFA ajouter au solde de ${email} ? (Négatif pour retirer)`); if (amount && !isNaN(amount)) { let u = users.find(x => x.email === email); if(u) { u.balance = (u.balance || 0) + Number(amount); if (u.balance < 0) u.balance = 0; try{ localStorage.setItem('centraUsers', JSON.stringify(users)); }catch(e){alert("Erreur de sauvegarde");} if(currentUser && currentUser.email === email) { currentUser.balance = u.balance; try{ localStorage.setItem('centraSession', JSON.stringify(currentUser)); }catch(e){} } renderAdminUsers(); updateAuthUI(); alert(`Nouveau solde: ${u.balance.toLocaleString()} FCFA`); } } }
+        function deleteUserAccount(email) { if(confirm("Supprimer ce compte ET ses annonces ?")) { const uToDelete = users.find(x => x.email === email); if(uToDelete) { products = products.filter(p => p.seller !== uToDelete.name); saveData(); users = users.filter(x => x.email !== email); try{ localStorage.setItem('centraUsers', JSON.stringify(users)); }catch(e){} renderAdminUsers(); renderAll(); } } }
+
+        function renderAdminTable() {
+            const container = document.getElementById('admin-table-body'); if(!container) return;
+            document.getElementById('stat-users').innerText = users.length; document.getElementById('stat-profits').innerText = Math.round(totalProfits).toLocaleString() + ' F';
+            let activeVal = 0; let pendingCount = 0; let html = '';
+            products.forEach(p => {
+                let actualPrice = p.salePrice ? Number(p.salePrice) : Number(p.price);
+                if((p.status === 'Validé' || p.status === 'Sponsorisé') && p.stock > 0 && !p.isSold && p.category !== 'Service') activeVal += (actualPrice * Number(p.stock));
+                if(p.status === 'En attente') pendingCount++;
+                const sellerObj = users.find(u => u.name === p.seller); const sellerPhone = sellerObj && sellerObj.phone ? sellerObj.phone : 'Tel: N/A';
+                let rate = getTaxRate(sellerObj, p.category); let estTax = Math.round(actualPrice * (rate / 100));
+                let statusBtn = p.status === 'En attente' ? `<button onclick="updateStatus(${p.id}, 'Validé')" class="flex-grow py-2 bg-green-100 text-green-700 rounded-lg text-[10px] font-bold shadow-sm">Valider</button>` : `<button onclick="updateStatus(${p.id}, 'En attente')" class="flex-grow py-2 bg-orange-100 text-orange-700 rounded-lg text-[10px] font-bold shadow-sm">Suspendre</button>`;
+                let priceHtml = `<p class="font-bold dark:text-white ${p.salePrice ? 'line-through text-gray-400 text-[10px]' : 'text-sm'}">${Number(p.price).toLocaleString()} F</p>`; if(p.salePrice) priceHtml += `<p class="font-bold text-red-500 text-sm">${Number(p.salePrice).toLocaleString()} F</p>`;
+                html += `<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-gray-700 flex flex-col gap-3 shadow-sm relative"> <div class="absolute top-4 right-4 flex gap-2"> <span class="px-2 py-1 rounded text-[9px] font-bold ${p.status==='Validé'||p.status==='Sponsorisé'?'bg-green-100 text-green-700': (p.status==='Révoqué' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700')}">${p.status}</span> </div> <div class="flex items-start gap-3 pr-16"> <img src="${p.image}" class="h-12 w-12 rounded-lg object-cover shadow-sm shrink-0"> <div class="truncate"> <p class="font-bold text-gray-800 dark:text-white truncate text-xs">${p.name}</p> <p class="text-[10px] text-gray-500 truncate">${p.seller} <span class="text-blue-500 font-bold ml-1">${sellerPhone}</span></p> <div class="flex items-center gap-2 mt-1"> <span class="text-[9px] bg-gray-100 dark:bg-slate-700 px-2 rounded-full font-bold">${p.category}</span> ${p.salesCount >= 3 ? '<span class="text-[9px] text-red-500 font-black flex items-center gap-1"><i class="fas fa-fire"></i> Top</span>' : ''} </div> </div> </div> <div class="flex bg-gray-50 dark:bg-slate-700/50 rounded-lg p-2 border dark:border-gray-700 mt-1"> <div class="w-1/3 text-center border-r dark:border-gray-600"><p class="text-[9px] uppercase text-gray-400 font-bold">Prix</p>${priceHtml}</div> <div class="w-1/3 text-center border-r dark:border-gray-600 flex flex-col items-center justify-center"> <p class="text-[9px] uppercase text-gray-400 font-bold mb-1">Stock</p> ${p.category === 'Service' ? `<span class="text-[10px] font-bold text-purple-500">Service Pro</span>` : `<input type="number" value="${p.stock}" onchange="updateStock(${p.id}, this.value)" class="w-14 text-center border rounded p-1 text-[10px] dark:bg-slate-700 dark:text-white dark:border-gray-600">`} </div> <div class="w-1/3 text-center flex flex-col justify-center"><p class="text-[9px] uppercase text-gray-400 font-bold">Taxe Est.</p><p class="font-black text-green-600 text-xs">${estTax.toLocaleString()} F</p><p class="text-[8px] text-gray-400">(${rate}%)</p></div> </div> <div class="flex gap-2 border-t dark:border-gray-700 pt-3"> ${statusBtn} <button onclick="adminToggleSponsor(${p.id})" class="${p.isSponsored ? 'bg-yellow-500 text-white' : 'bg-gray-100 dark:bg-slate-700 text-gray-400 hover:text-yellow-500'} w-10 rounded-lg transition shadow-sm"><i class="fas fa-rocket"></i></button> <button onclick="deleteProduct(${p.id})" class="bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 w-10 rounded-lg transition shadow-sm"><i class="fas fa-trash"></i></button> </div> </div>`;
+            }); container.innerHTML = html; document.getElementById('stat-value').innerText = activeVal.toLocaleString() + ' F'; 
+        }
+
+        function adminToggleSponsor(id) { let p = products.find(x => x.id === id); if(p) { p.isSponsored = !p.isSponsored; if(p.isSponsored) p.status = 'Sponsorisé'; else if(p.status === 'Sponsorisé') p.status = 'Validé'; saveData(); renderAdminTable(); renderPublicGrid(); } }
+        function updateStatus(id, newStatus) { let p = products.find(x => x.id === id); if(p) { p.status = newStatus; if(newStatus !== 'Sponsorisé' && newStatus !== 'Validé') p.isSponsored = false; } saveData(); renderAdminTable(); renderPublicGrid(); renderMyAds(); renderAdminUsers(); }
+        function deleteProduct(id) { if(confirm("Supprimer ?")) { products = products.filter(x => x.id !== id); saveData(); renderAdminTable(); renderPublicGrid(); renderMyAds(); renderAdminUsers(); } }
+        function resetLocalDatabase() { if(confirm("DANGER : Effacer toutes les données ?")) { localStorage.clear(); location.reload(); } }
+        function sponsorProduct(id) { let p = products.find(x => x.id === id); if(p && confirm("2000 FCFA pour sponsoriser. Continuer ?")) { window.open("https://wa.me/23673001200?text=" + encodeURIComponent(`🚀 *DEMANDE SPONSORISATION*\n\nVendeur: ${currentUser.name}\nAnnonce: ${p.name}`), "_blank"); } }
+        function viewUserProducts(userName) {
+            document.getElementById('aup-name').innerText = userName; const container = document.getElementById('aup-body'); container.innerHTML = '';
+            const userProducts = products.filter(p => p.seller === userName);
+            if(userProducts.length === 0) { container.innerHTML = '<div class="p-6 text-center text-gray-400 font-bold italic">Aucune annonce active.</div>'; } else { let html = ''; userProducts.forEach(p => { let statusColor = (p.status === 'Validé' || p.status === 'Sponsorisé') ? 'text-green-500' : (p.status === 'Révoqué' ? 'text-red-500' : 'text-orange-500'); let priceDisp = p.salePrice ? `<span class="text-red-500">${Number(p.salePrice).toLocaleString()} F</span>` : Number(p.price).toLocaleString() + ' F'; html += `<div class="bg-gray-50 dark:bg-slate-800 p-3 rounded-xl border dark:border-gray-700 flex items-center justify-between gap-3"> <div class="flex items-center gap-3 w-1/2"> <img src="${p.image}" class="h-10 w-10 rounded object-cover shadow-sm shrink-0"> <div class="truncate"><p class="font-bold text-gray-800 dark:text-white truncate text-xs">${p.name}</p><p class="text-[10px] font-bold">${priceDisp}</p></div> </div> <div class="flex items-center justify-end gap-3 w-1/2"> ${p.category === 'Service' ? '<span class="text-[9px] font-bold text-purple-500">Pro</span>' : `<input type="number" value="${p.stock}" onchange="updateStock(${p.id}, this.value); viewUserProducts('${userName}')" class="w-12 text-center border rounded p-1 text-[10px] dark:bg-slate-700 dark:text-white dark:border-gray-600">`} <div class="flex flex-col items-end"><span class="text-[9px] font-bold ${statusColor}">${p.status}</span><button onclick="deleteProduct(${p.id}); viewUserProducts('${userName}')" class="text-red-500 hover:text-red-700 mt-1"><i class="fas fa-trash"></i></button></div> </div> </div>`; }); container.innerHTML = html; } document.getElementById('adminUserProductsModal').classList.remove('hidden');
+        }
+        function closeAdminUserProducts() { document.getElementById('adminUserProductsModal').classList.add('hidden'); }
+        function setPromoPrice(id) { let p = products.find(x => x.id === id); if(p) { let current = p.salePrice || ""; let newPrice = prompt("Entrez le prix promotionnel FCFA (0 pour annuler):", current); if (newPrice !== null) { let parsed = parseInt(newPrice); if (!isNaN(parsed) && parsed > 0 && parsed < p.price) { p.salePrice = parsed; } else { p.salePrice = null; } saveData(); renderMyAds(); renderPublicGrid(); renderAdminTable(); renderAdminUsers(); } } }
+
+        function renderMyAds() {
+            const container = document.getElementById('my-ads-body'); if(!container || !currentUser) return; container.innerHTML = '';
+            const myProducts = products.filter(p => p.seller === currentUser.name);
+            if(myProducts.length === 0) { container.innerHTML = '<div class="p-6 text-center text-gray-400 font-bold italic">Aucune annonce.</div>'; return; }
+            let html = '';
+            myProducts.forEach(p => {
+                let statusColor = (p.status === 'Validé' || p.status === 'Sponsorisé') ? 'text-green-500 bg-green-50' : (p.status === 'Révoqué' ? 'text-red-500 bg-red-50' : 'text-orange-500 bg-orange-50');
+                let priceDisp = p.salePrice ? `<span class="text-red-500">${Number(p.salePrice).toLocaleString()} F</span>` : Number(p.price).toLocaleString() + ' F';
+                html += `<div class="bg-gray-50 dark:bg-slate-800 p-3 sm:p-4 rounded-xl border dark:border-gray-700 flex flex-col gap-3 shadow-sm"> <div class="flex justify-between items-start"> <div class="flex items-center gap-3 pr-4"> <img src="${p.image}" class="h-12 w-12 rounded object-cover shadow-sm shrink-0"> <div class="truncate"><p class="font-bold text-gray-800 dark:text-white truncate text-xs sm:text-sm">${p.name}</p><p class="text-[10px] sm:text-xs font-bold">${priceDisp}</p></div> </div> <span class="px-2 py-1 rounded text-[9px] font-bold ${statusColor} dark:bg-transparent dark:border border-current shrink-0">${p.status}</span> </div> <div class="flex justify-between items-center border-t dark:border-gray-700 pt-3"> <div class="flex items-center gap-2"> <span class="text-[9px] uppercase text-gray-400 font-bold">Stock:</span> ${p.category === 'Service' ? '<span class="text-[10px] font-bold text-purple-500">Service Pro</span>' : `<input type="number" value="${p.stock}" onchange="updateStock(${p.id}, this.value)" class="w-14 text-center border rounded p-1 text-[10px] dark:bg-slate-700 dark:text-white dark:border-gray-600">`} </div> <div class="flex gap-1 sm:gap-2"> <button onclick="setPromoPrice(${p.id})" title="Ajouter Promo" class="text-pink-500 hover:text-pink-700 p-2 bg-pink-50 dark:bg-pink-900/20 rounded-lg transition"><i class="fas fa-tag"></i></button> ${(!p.isSponsored && (p.status === 'Validé' || p.status === 'Sponsorisé')) ? `<button onclick="sponsorProduct(${p.id})" title="Sponsoriser" class="text-yellow-500 hover:text-yellow-600 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg transition"><i class="fas fa-rocket"></i></button>` : ''} ${p.status !== 'Révoqué' ? `<button onclick="updateStatus(${p.id}, 'Révoqué')" title="Révoquer" class="text-orange-500 hover:text-orange-700 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg transition"><i class="fas fa-ban"></i></button>` : `<button onclick="updateStatus(${p.id}, 'En attente')" title="Remettre" class="text-green-500 hover:text-green-700 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg transition"><i class="fas fa-undo"></i></button>`} <button onclick="deleteProduct(${p.id})" title="Supprimer" class="text-red-500 hover:text-red-700 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg transition"><i class="fas fa-trash"></i></button> </div> </div> </div>`;
+            }); container.innerHTML = html;
+        }
+
+        function updateStock(id, newStock) { newStock = parseInt(newStock) || 0; if (newStock < 0) newStock = 0; products = products.map(p => { if (p.id === id) { return {...p, stock: newStock, isSold: newStock === 0}; } return p; }); saveData(); if(document.getElementById('myAdsModal') && !document.getElementById('myAdsModal').classList.contains('hidden')) renderMyAds(); if(document.body.classList.contains('admin-mode')) { renderAdminTable(); renderAdminUsers(); } renderPublicGrid(); }
+        function exportToCSV() { let csvContent = "data:text/csv;charset=utf-8,ID,Vendeur,Nom Produit,Categorie,Prix Normal,Prix Promo,Stock,Statut,Sponsorise,Ventes\n"; products.forEach(p => { csvContent += `${p.id},"${p.seller}","${p.name}",${p.category},${p.price},${p.salePrice||''},${p.stock},${p.status},${p.isSponsored},${p.salesCount||0}\n`; }); const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", "centra_market_export.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link); }
+        function saveData() { try { localStorage.setItem('centraProducts', JSON.stringify(products)); } catch(e) { alert(e.name === 'QuotaExceededError' ? "MÉMOIRE PLEINE : Espace de stockage insuffisant." : "Erreur."); } }
+        function saveCart() { try { localStorage.setItem('centraCart', JSON.stringify(cart)); } catch(e) {} }
     </script>
 </body>
 </html>
