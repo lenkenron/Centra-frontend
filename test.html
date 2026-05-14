@@ -240,11 +240,16 @@
             </div>
         </div>
 
-        <div class="bg-white dark:bg-darkcard rounded-2xl shadow-lg border dark:border-gray-700 overflow-hidden">
-            <h4 class="font-bold p-4 uppercase text-xs text-gray-500 dark:text-gray-400 border-b dark:border-gray-700 bg-gray-50 dark:bg-slate-800"><i class="fas fa-box"></i> Inventaire Global</h4>
-            <div id="admin-table-body" class="p-4 space-y-3 bg-gray-50/50 dark:bg-transparent"></div>
+                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-lg border dark:border-gray-700 overflow-hidden flex flex-col h-[600px]">
+            <div class="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-slate-800 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <h4 class="font-bold uppercase text-xs text-gray-500 dark:text-gray-400"><i class="fas fa-box"></i> Inventaire Global</h4>
+                <div class="relative w-full sm:w-64">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                    <input type="text" id="admin-inventory-search" oninput="renderAdminTable()" placeholder="Chercher produit, vendeur..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-xs dark:bg-slate-700 dark:text-white dark:border-gray-600 outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+            </div>
+            <div id="admin-table-body" class="p-4 space-y-3 bg-gray-50/50 dark:bg-transparent overflow-y-auto flex-grow"></div>
         </div>
-    </div>
 
     <div id="enterpriseBrandModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[170]">
         <div class="bg-white dark:bg-darkcard rounded-3xl max-w-sm w-full p-6 shadow-2xl relative">
@@ -1561,10 +1566,11 @@ function closeEnterpriseBrandModal() { document.getElementById('enterpriseBrandM
         }
 
 
-        function openQuickView(id) {
+                function openQuickView(id) {
             const p = products.find(prod => prod.id === id); if(!p) return;
             document.getElementById('qv-img').src = p.image; document.getElementById('qv-cat').innerText = p.category; document.getElementById('qv-name').innerText = p.name; document.getElementById('qv-desc').innerText = p.description; 
-                        // Logique de la galerie
+            
+            // Logique de la galerie
             let galleryContainer = document.getElementById('qv-gallery');
             if (galleryContainer) {
                 if (p.gallery && p.gallery.length > 1) {
@@ -1578,8 +1584,18 @@ function closeEnterpriseBrandModal() { document.getElementById('enterpriseBrandM
                 }
             }
 
-            if (p.salePrice) { document.getElementById('qv-price').innerHTML = `<span class="text-sm text-gray-400 line-through mr-2">${Number(p.price).toLocaleString()} F</span><span class="text-red-500">${Number(p.salePrice).toLocaleString()} FCFA</span>`; } 
-            else { document.getElementById('qv-price').innerText = Number(p.price).toLocaleString() + " FCFA"; }
+            // 🚀 NOUVEAU: Moteur de Prix Dynamique
+            function updateQVPrice(qty) {
+                let baseTotal = Number(p.price) * qty;
+                if (p.salePrice) { 
+                    let saleTotal = Number(p.salePrice) * qty;
+                    document.getElementById('qv-price').innerHTML = `<span class="text-sm text-gray-400 line-through mr-2">${baseTotal.toLocaleString()} F</span><span class="text-red-500">${saleTotal.toLocaleString()} FCFA</span>`; 
+                } 
+                else { document.getElementById('qv-price').innerText = baseTotal.toLocaleString() + " FCFA"; }
+            }
+            
+            // Affiche le prix pour 1 par défaut
+            updateQVPrice(1);
             
             document.getElementById('qv-delivery').innerHTML = `<i class="fas fa-truck text-blue-500"></i> Livraison/Délai: <span class="text-gray-800 dark:text-white">Voir à la commande</span>`;
             
@@ -1600,7 +1616,7 @@ function closeEnterpriseBrandModal() { document.getElementById('enterpriseBrandM
             else if (sellerUser && sellerUser.isCertified) { badges = `<span class="badge badge-blue-check ml-1"><i class="fas fa-check-circle"></i></span>`; }
             document.getElementById('qv-seller-badges').innerHTML = badges;
             
-                        let stockHtml = '';
+            let stockHtml = '';
             if (p.category !== 'Service') {
                 if (p.stock > 0 && !p.isSold) {
                     stockHtml = `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">En Stock (${p.stock})</span>`;
@@ -1612,6 +1628,17 @@ function closeEnterpriseBrandModal() { document.getElementById('enterpriseBrandM
                 stockHtml = '<span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold">Service Pro</span>';
             }
             document.getElementById('qv-stock').innerHTML = stockHtml;
+
+            // 🚀 NOUVEAU: Écouteur d'événement pour multiplier le prix en temps réel !
+            let qtyInput = document.getElementById('qv-qty-input');
+            if (qtyInput) {
+                qtyInput.addEventListener('input', function() {
+                    let q = parseInt(this.value) || 1;
+                    if (q < 1) { q = 1; this.value = 1; }
+                    if (q > p.stock) { q = p.stock; this.value = p.stock; }
+                    updateQVPrice(q);
+                });
+            }
 
             let actionHtml = '';
             if (p.stock > 0 && !p.isSold && (!currentUser || p.seller !== currentUser.name)) {
@@ -1797,41 +1824,127 @@ function closeEnterpriseBrandModal() { document.getElementById('enterpriseBrandM
         }
 
         function confirmOMPayment() {
+        function submitOrder() {
+            if (cart.length === 0) return alert("Votre panier est vide.");
+            if (!currentUser) { toggleAuth(); return; }
+
+            let subTotal = 0;
+            cart.forEach(item => {
+                let qty = item.cartQty || 1;
+                let itemPrice = item.salePrice ? Number(item.salePrice) : Number(item.price);
+                subTotal += (itemPrice * qty);
+            });
+
+            let deliveryFee = 0; 
+            const zoneSelect = document.getElementById('deliveryZone');
+            if (zoneSelect) {
+                deliveryFee = Number(zoneSelect.value);
+                let userPurchases = currentUser.purchasesCount || 0;
+                if (userPurchases < 3) { deliveryFee = 0; }
+            }
+
+            currentUser.purchasesCount = (currentUser.purchasesCount || 0) + 1; saveData(); 
+
+            alert("🎉 Commande confirmée ! L'équipe a été notifiée directement sur le panel Admin.");
+            cart = []; saveCart(); updateAuthUI(); renderAll(); document.getElementById('cartModal').classList.add('hidden');
+        }
+
+        function directBuy(productId) { 
+            if (!currentUser) { toggleAuth(); return; } 
+            const product = products.find(p => p.id === productId); if (!product) return; 
+            
+            let qtyInput = document.getElementById('qv-qty-input');
+            let qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+            
+            let cartProduct = {...product, cartQty: qty};
+            activeCheckoutItems = [cartProduct]; 
+            activeCheckoutTotal = (cartProduct.salePrice ? Number(cartProduct.salePrice) : Number(cartProduct.price)) * qty; 
+            closeQuickView(); openCheckoutModal(); 
+        }
+
+        function startCheckout() { 
+            if (cart.length === 0) return; 
+            activeCheckoutItems = [...cart]; 
+            activeCheckoutTotal = cart.reduce((sum, item) => sum + ((item.salePrice ? Number(item.salePrice) : Number(item.price)) * (item.cartQty || 1)), 0); 
+            toggleCartModal(); openCheckoutModal(); 
+        }
+
+        function openCheckoutModal() {
+            document.getElementById('wc-total').innerText = activeCheckoutTotal.toLocaleString() + " FCFA"; document.getElementById('wc-balance').innerText = (currentUser.balance || 0).toLocaleString() + " FCFA";
+            const btn = document.getElementById('wc-confirm-btn'); const err = document.getElementById('wc-error');
+            if ((currentUser.balance || 0) < activeCheckoutTotal) { btn.classList.replace('bg-blue-600', 'bg-gray-400'); btn.classList.remove('hover:bg-blue-700'); btn.disabled = true; err.classList.remove('hidden'); } else { btn.classList.replace('bg-gray-400', 'bg-blue-600'); btn.classList.add('hover:bg-blue-700'); btn.disabled = false; err.classList.add('hidden'); }
+            document.getElementById('checkoutModal').classList.remove('hidden');
+        }
+        
+        function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
+
+        function buildPendingOrder(type, locationText) {
+            let orderItems = [];
+            activeCheckoutItems.forEach(item => {
+                let p = products.find(prod => prod.id === item.id);
+                let qty = item.cartQty || 1;
+                if (p && p.category !== 'Service') { p.stock = Math.max(0, p.stock - qty); if (p.stock === 0) p.isSold = true; }
+                let itemPrice = item.salePrice ? Number(item.salePrice) : Number(item.price);
+                orderItems.push({ id: item.id, name: item.name, category: item.category, seller: item.seller, price: itemPrice, qty: qty, lineTotal: itemPrice * qty });
+            });
+
+            let order = {
+                id: Date.now(),
+                buyer: currentUser.name,
+                buyerEmail: currentUser.email,
+                phone: currentUser.phone || 'N/A',
+                items: orderItems,
+                total: activeCheckoutTotal,
+                type: type,
+                location: locationText,
+                date: new Date().toLocaleString(),
+                status: 'En attente'
+            };
+            pendingOrders.push(order);
+            try{ setCloudData('centraPendingOrders', pendingOrders); } catch(e){}
+            saveData(); 
+            if (activeCheckoutItems.length === cart.length) { cart = []; saveCart(); }
+            return order;
+        }
+
+        function confirmWalletPayment() {
+            if((currentUser.balance || 0) < activeCheckoutTotal) return;
             const locationInput = document.getElementById('checkoutLocation').value.trim();
             const locationText = locationInput ? locationInput : 'Non précisé';
 
-            let order = buildPendingOrder('Orange Money', locationText);
+            currentUser.balance -= activeCheckoutTotal; 
+            const uIndex = users.findIndex(u => u.email === currentUser.email); 
+            if(uIndex > -1) users[uIndex].balance = currentUser.balance;
+            try{ setCloudData('centraUsers', users); localStorage.setItem('centraSession', JSON.stringify(currentUser)); }catch(e){}
 
-            let message = `🛒 *COMMANDE EN ATTENTE DE VALIDATION*\n\n👤 *Acheteur :* ${order.buyer}\n📞 *Tél:* ${order.phone}\n📍 *Livraison:* ${order.location}\n💳 *Paiement prévu:* Orange Money\n\nArticles :\n`;
-            
-            order.items.forEach((item, index) => {
-                const sellerObj = users.find(u => u.name === item.seller); const sPhone = sellerObj && sellerObj.phone ? sellerObj.phone : 'N/A';
-                message += `${index + 1}. *${item.name}*\n   Vendeur: ${item.seller} (${sPhone})\n   Prix: ${item.price.toLocaleString()} F\n\n`;
-            });
-            message += `*TOTAL À PAYER: ${order.total.toLocaleString()} FCFA*\n\n_Je souhaite régler par Orange Money. Comment procéder ?_`;
+            buildPendingOrder('Solde Local', locationText);
             
             closeCheckoutModal(); renderAll(); updateAuthUI(); 
+            alert("🎉 Commande validée ! Le paiement a été déduit de votre solde. L'équipe est notifiée sur le panel Admin.");
+        }
+
+                function confirmOMPayment() {
+            const locationInput = document.getElementById('checkoutLocation').value.trim();
+            const locationText = locationInput ? locationInput : 'Non précisé';
+
+            // 1. Sauvegarde la commande dans le panel Admin automatiquement
+            let order = buildPendingOrder('Orange Money', locationText);
+            
+            // 2. Prépare le message WhatsApp pour l'équipe
+            let message = `🛒 *PAIEMENT ORANGE MONEY*\n\n👤 *Acheteur :* ${order.buyer}\n📞 *Tél:* ${order.phone}\n📍 *Livraison:* ${order.location}\n\n*Articles :*\n`;
+            order.items.forEach((item, index) => {
+                message += `${index + 1}. ${item.qty}x ${item.name} - ${item.lineTotal.toLocaleString()} F\n`;
+            });
+            message += `\n💵 *TOTAL À PAYER: ${order.total.toLocaleString()} FCFA*\n\n_Bonjour l'équipe, je souhaite régler cette commande par Orange Money. Quel est le numéro ?_`;
+            
+            // 3. Ferme le modal et met à jour l'UI
+            closeCheckoutModal(); renderAll(); updateAuthUI(); 
+            
+            // 4. Alerte le client et ouvre WhatsApp !
+            alert("✅ Commande enregistrée ! Vous allez être redirigé vers WhatsApp pour finaliser le paiement Orange Money.");
             window.open("https://wa.me/23673001200?text=" + encodeURIComponent(message), "_blank");
         }
 
-        function openDepositModal() { document.getElementById('depositPhone').value = ''; document.getElementById('depositAmount').value = ''; document.getElementById('depositModal').classList.remove('hidden'); }
-        function closeDepositModal() { document.getElementById('depositModal').classList.add('hidden'); }
-        function confirmDeposit() {
-            const amt = document.getElementById('depositAmount').value; const phone = document.getElementById('depositPhone').value; if(!amt || Number(amt) <= 0 || !phone) { alert("Montant ou numéro invalide"); return; }
-            let waMsg = `💰 *DEMANDE DE RECHARGE*\n\n👤 Utilisateur: ${currentUser.name}\n📞 Tél Compte: ${currentUser.phone || 'N/A'}\n📱 Numéro OM d'envoi: ${phone}\n💵 Montant envoyé: ${amt} FCFA\n\nVeuillez vérifier la réception et créditer mon compte via le Panel Admin.`;
-            window.open("https://wa.me/23673001200?text=" + encodeURIComponent(waMsg), "_blank");
-            closeDepositModal();
-        }
-
-        function openWithdrawModal() { document.getElementById('withdrawPhone').value = ''; document.getElementById('withdrawAmount').value = ''; document.getElementById('withdrawAmount').max = currentUser.balance || 0; document.getElementById('withdrawModal').classList.remove('hidden'); }
-        function closeWithdrawModal() { document.getElementById('withdrawModal').classList.add('hidden'); }
-        function confirmWithdraw() {
-            const amt = Number(document.getElementById('withdrawAmount').value); const phone = document.getElementById('withdrawPhone').value; if(!amt || amt <= 0 || amt > (currentUser.balance || 0)) { alert("Solde insuffisant ou montant invalide"); return; } if(!phone) { alert("Veuillez entrer le numéro OM"); return; }
-            currentUser.balance -= amt; const uIndex = users.findIndex(u => u.email === currentUser.email); if(uIndex > -1) users[uIndex].balance = currentUser.balance; try{ setCloudData('centraUsers', users); localStorage.setItem('centraSession', JSON.stringify(currentUser)); }catch(e){} 
-            let waMsg = `💸 *DEMANDE DE RETRAIT*\n\n👤 Utilisateur: ${currentUser.name}\n📞 Tél Compte: ${currentUser.phone || 'N/A'}\n📱 Envoyer l'argent sur OM: ${phone}\n💵 Montant à recevoir: ${amt} FCFA\n\n(Ce montant a déjà été déduit de mon solde local).`;
-            window.open("https://wa.me/23673001200?text=" + encodeURIComponent(waMsg), "_blank");
-            closeWithdrawModal(); updateAuthUI(); renderAll();
-        }
 
         function renderAll() { 
             renderPublicGrid(); 
@@ -2389,16 +2502,38 @@ function closeEnterpriseBrandModal() { document.getElementById('enterpriseBrandM
 
         function deleteUserAccount(email) { if(confirm("Supprimer ce compte ET ses annonces ?")) { const uToDelete = users.find(x => x.email === email); if(uToDelete) { products = products.filter(p => p.seller !== uToDelete.name); saveData(); users = users.filter(x => x.email !== email); try{ setCloudData('centraUsers', users); }catch(e){} renderAdminUsers(); renderAll(); } } }
 
-        function renderAdminTable() {
+                function renderAdminTable() {
             const container = document.getElementById('admin-table-body'); if(!container) return;
             document.getElementById('stat-users').innerText = users.length; document.getElementById('stat-profits').innerText = Math.round(totalProfits).toLocaleString() + ' F';
-            let activeVal = 0; let pendingCount = 0; let html = '';
             
+            // Calcul global des statistiques (sur tous les produits)
+            let activeVal = 0; let pendingCount = 0;
             products.forEach(p => {
                 let actualPrice = p.salePrice ? Number(p.salePrice) : Number(p.price);
                 if((p.status === 'Validé' || p.status === 'Sponsorisé') && p.stock > 0 && !p.isSold && p.category !== 'Service') activeVal += (actualPrice * Number(p.stock));
                 if(p.status === 'En attente') pendingCount++;
-                
+            });
+
+            // Logique de Recherche
+            const searchInput = document.getElementById('admin-inventory-search');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+            let filteredProducts = products;
+            if (searchTerm) {
+                filteredProducts = products.filter(p => 
+                    (p.name && p.name.toLowerCase().includes(searchTerm)) || 
+                    (p.seller && p.seller.toLowerCase().includes(searchTerm)) ||
+                    (p.category && p.category.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            let html = '';
+            if (filteredProducts.length === 0) {
+                html = '<div class="text-center text-gray-500 py-6 font-bold text-xs italic">Aucun produit trouvé.</div>';
+            }
+
+            filteredProducts.forEach(p => {
+                let actualPrice = p.salePrice ? Number(p.salePrice) : Number(p.price);
                 const sellerObj = users.find(u => u.name === p.seller); const sellerPhone = sellerObj && sellerObj.phone ? sellerObj.phone : 'Tel: N/A';
                 let rate = getTaxRate(sellerObj, p.category); let estTax = Math.round(actualPrice * (rate / 100));
                 
@@ -2435,7 +2570,10 @@ function closeEnterpriseBrandModal() { document.getElementById('enterpriseBrandM
                         <button onclick="deleteProduct(${p.id})" class="bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 w-10 rounded-lg transition shadow-sm"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>`;
-            }); container.innerHTML = html; document.getElementById('stat-value').innerText = activeVal.toLocaleString() + ' F'; 
+            }); 
+            
+            container.innerHTML = html; 
+            document.getElementById('stat-value').innerText = activeVal.toLocaleString() + ' F'; 
         }
 
         function adminToggleSponsor(id) { let p = products.find(x => x.id === id); if(p) { p.isSponsored = !p.isSponsored; if(p.isSponsored) p.status = 'Sponsorisé'; else if(p.status === 'Sponsorisé') p.status = 'Validé'; saveData(); renderAdminTable(); renderPublicGrid(); } }
