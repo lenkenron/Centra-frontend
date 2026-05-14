@@ -631,11 +631,15 @@
                 const deliveryToValidate = urlParams.get('validate_delivery');
                 if (deliveryToValidate) { setTimeout(() => { promptDeliveryValidation(deliveryToValidate); }, 1500); }
 
-            } catch (error) {
-                console.error(error);
-                document.body.innerHTML = `<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #fee2e2; padding: 20px; text-align: center;"><div style="background: white; padding: 30px; border-radius: 20px; max-width: 400px;"><h1 style="color: #dc2626; margin-bottom: 10px;">⚠️ Base de données obsolète</h1><button onclick="localStorage.clear(); location.reload();" style="background: #dc2626; color: white; border: none; padding: 15px; border-radius: 10px; font-weight:bold; width: 100%;">Factory Reset (Requis)</button></div></div>`;
+                        } catch (error) {
+                console.error("Boot error intercepted:", error);
+                const loader = document.getElementById('globalLoader');
+                if (loader) {
+                    loader.classList.add('opacity-0');
+                    setTimeout(() => loader.style.display = 'none', 500);
+                }
             }
-        };
+
 
         // NOUVEAU: FONCTIONS DES LIEUX (ADMIN & CHECKOUT)
                 function buildLocationUI() {
